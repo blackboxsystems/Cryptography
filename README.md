@@ -1,2 +1,2 @@
 # Cryptography
-Objective-C modules and classes for symmetric &amp; asymmetric encryption/decryption protocols, key derivation, hash functions, and the like.
+Objective-C wrappers for symmetric & asymmetric encryption/decryption protocols, key derivation functions, hash functions, and other modules.
