@@ -20,4 +20,7 @@
 // read seed_dictionary.txt and return data
 + (NSArray *)getDictionary;
 
++ (NSInteger)entropySize:(NSInteger)words;
++ (NSInteger)wordSize:(NSInteger)data;
+
 @end

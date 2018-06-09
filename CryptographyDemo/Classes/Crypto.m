@@ -25,9 +25,10 @@
     if ((Nbytes > 0) && (Nbytes % 8 == 0)) {
         uint8_t *bytes = malloc(Nbytes);
         int status = SecRandomCopyBytes(kSecRandomDefault, Nbytes, bytes);
-        if (status == 0) {
-            byteData = [NSData dataWithBytes:bytes length:Nbytes];
+        if (status != 0) {
+            return nil;
         }
+        byteData = [NSData dataWithBytes:bytes length:Nbytes];
         free(bytes);
     }
     return byteData;
@@ -45,6 +46,7 @@
     }
     
     NSMutableData *digest;
+    
     switch (nbits) {
         case 224:
             digest = [[NSMutableData alloc] initWithLength:CC_SHA224_DIGEST_LENGTH];
