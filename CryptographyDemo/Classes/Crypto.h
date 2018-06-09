@@ -14,7 +14,8 @@
 
 
 // key derivation rounds
-static const NSInteger kPBKDFRoundsAES = 4096;
+#define kPBKDFRoundsAES 4096
+#define kMaxNonce 4294967295
 
 @interface Crypto : NSObject
 
@@ -72,5 +73,7 @@ static const NSInteger kPBKDFRoundsAES = 4096;
 // lamport signature generation
 + (NSData *)generateLamportSignature:(NSData *)digest;
 
+// proof of work algorithm
++ (NSDictionary *)proofOfWork:(NSData *)challenge difficulty:(NSInteger)diff;
 
 @end

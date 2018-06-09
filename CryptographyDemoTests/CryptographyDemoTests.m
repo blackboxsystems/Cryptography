@@ -251,6 +251,22 @@ static const NSInteger kKDFRoundsTEST = 1024;
     XCTAssertEqualObjects(mnemonic, @"cake apple borrow silk endorse fitness top denial coil riot stay wolf luggage oxygen faint major edit measure invite love trap field dilemma oblige");
 }
 
+- (void)test_proofOfWork {
+    
+    // init challenge
+    NSData *challenge = [DataFormatter hexStringToData:@"ab436ff422f54c852829a63ab325791c001de60ae4ea934ad8a603cc5eab3129"];
+    // number of leading 0's to find
+    NSInteger difficulty = 4;
+    
+    NSDictionary *dict = [Crypto proofOfWork:challenge difficulty:difficulty];
+    NSString *proof = [DataFormatter hexDataToString:[dict objectForKey:@"proof"]];
+    NSInteger nonce = [[dict objectForKey:@"nonce"] integerValue];
+    
+    // verify proof parameters
+    XCTAssertEqual(nonce, 35559);
+    XCTAssertEqualObjects(proof, @"000024b20de5f9375254af627f76c47fa93973f3442bfbe42e9fc8fd9cc969c6");
+}
+
 // Testing a lamport signature requires us to create the keys deterministically
 - (void)test_lamportSignature {
     
