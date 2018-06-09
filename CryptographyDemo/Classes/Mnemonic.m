@@ -11,15 +11,15 @@
 @implementation Mnemonic : NSObject
 
 NS_ENUM(NSInteger, CCSeedWords) {
-    kSeedWords_12 = 12,
-    kSeedWords_18 = 18,
-    kSeedWords_24 = 24
+    kSeedWords12 = 12,
+    kSeedWords18 = 18,
+    kSeedWords24 = 24
 };
 
 NS_ENUM(NSInteger, CCSeedEntropy) {
-    kSeedEntropy_12 = 16,
-    kSeedEntropy_18 = 24,
-    kSeedEntropy_24 = 32
+    kSeedBytes16 = 16,
+    kSeedBytes24 = 24,
+    kSeedBytes32 = 32
 };
 
 /*  -------------------------------------------------------------
@@ -28,32 +28,20 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
  */
 + (NSString *)generateMemnonic:(NSData *)entropy {
     
-    NSInteger Nwords;
-    size_t nbytes = entropy.length;
-    switch (nbytes) {
-        case kSeedEntropy_12:
-            Nwords = kSeedWords_12;
-            break;
-        case kSeedEntropy_18:
-            Nwords = kSeedWords_18;
-            break;
-        case kSeedEntropy_24:
-            Nwords = kSeedWords_24;
-            break;
-        default:
-            Nwords = kSeedWords_12;
-            break;
+    if (entropy == nil || entropy.length % 8 != 0) {
+        return nil;
     }
     
-    if (entropy == nil) {
+    NSInteger Nwords = [self wordSize:entropy.length];
+    size_t nbytes = [self entropySize:Nwords];
+
+    if (entropy.length != nbytes) {
         entropy = [Crypto generateRandomCrytoBytes:nbytes];
-    } else {
-        if (nbytes < entropy.length) {
-            entropy = [entropy subdataWithRange:NSMakeRange(0, nbytes)];
-        }
     }
     
     NSMutableData *bitmap = [[NSMutableData alloc] initWithData:entropy];
+    
+    // append checksum to the seed
     NSData *hash = [Crypto SHA:entropy nbits:nbytes*8];
     NSData *checksum = [hash subdataWithRange:NSMakeRange(0, 2)];
     [bitmap appendData:checksum];
@@ -82,46 +70,62 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
         [phrase appendString:[NSString stringWithFormat:@"%@ ",word]];
     }
     
-    NSString *mnemonic = [[phrase stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]]
-                          stringByReplacingOccurrencesOfString:@"-" withString:@" "];
-    
-    return mnemonic;
+    return [[phrase stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]]
+            stringByReplacingOccurrencesOfString:@"-" withString:@" "];
 }
 
 + (NSString *)randomMemnonic:(NSInteger)Nwords {
     
-    size_t nbytes;
+    // calculate entropy
+    size_t nbytes = [self entropySize:Nwords];
+    NSData *entropy = [[Crypto generateRandomCrytoBytes:nbytes] subdataWithRange:NSMakeRange(0, nbytes)];
     
-    switch (Nwords) {
-        case kSeedWords_12:
-            nbytes = kSeedEntropy_12;
-            break;
-        case kSeedWords_18:
-            nbytes = kSeedEntropy_18;
-            break;
-        case kSeedWords_24:
-            nbytes = kSeedEntropy_24;
-            break;
-        default:
-            nbytes = kSeedEntropy_12;
-            break;
-    }
-    
-    NSString *mnemonic = [self generateMemnonic:[[Crypto generateRandomCrytoBytes:nbytes] subdataWithRange:NSMakeRange(0, nbytes)]];
-    
-    return mnemonic;
+    return [self generateMemnonic:entropy];
 }
-
 
 + (NSArray *)getDictionary {
+    
+    // get file data
     NSString *filePath = [[NSBundle mainBundle] pathForResource:@"seed_dictionary" ofType:@"txt"];
     NSData *data = [NSData dataWithContentsOfFile:filePath];
-    // integrity check on file
-    assert([[DataFormatter hexDataToString:[Crypto SHA:data nbits:256]] isEqualToString:@"c1be978261f9acab4ab29806c57de07c7bea0a06acbc94f227d248da9b290c6b"]);
-    NSString *dicts = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     
-    return [dicts componentsSeparatedByString:@"-"];
+    // integrity check on file
+    NSData *fileHash = [Crypto SHA:data nbits:256];
+    assert([[DataFormatter hexDataToString:fileHash] isEqualToString:@"c1be978261f9acab4ab29806c57de07c7bea0a06acbc94f227d248da9b290c6b"]);
+    
+    // parse into word array
+    NSString *dict = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    NSArray *wordArray = [dict componentsSeparatedByString:@"-"];
+    
+    return wordArray;
 }
 
+// get entropy size (in bytes) based on number of words for mnemonic
++ (NSInteger)entropySize:(NSInteger)words {
+    switch (words) {
+        case kSeedWords12:
+            return kSeedBytes16;
+        case kSeedWords18:
+            return kSeedBytes24;
+        case kSeedWords24:
+            return kSeedBytes32;
+        default:
+            return kSeedBytes16;
+    }
+}
+
+// get number of words in mnemonic based on entropy size (in bytes)
++ (NSInteger)wordSize:(NSInteger)nbytes {
+    switch (nbytes) {
+        case kSeedBytes16:
+            return kSeedWords12;
+        case kSeedBytes24:
+            return kSeedWords18;
+        case kSeedBytes32:
+            return kSeedWords24;
+        default:
+            return kSeedWords12;
+    }
+}
 
 @end

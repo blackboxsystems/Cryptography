@@ -15,8 +15,8 @@
 @end
 
 @implementation CryptographyDemoTests
-static const NSInteger kKDFRoundsTEST = 1024;
 
+static const NSInteger kKDFRoundsTEST = 1024;
 
 
 - (void)setUp {
@@ -209,57 +209,43 @@ static const NSInteger kKDFRoundsTEST = 1024;
 
 - (void)test_AES_CTR_encrypt_decrypt {
     
-    // derive an encryption key from a password and encrypt
     NSString *password = @"test";
-    NSData *msg = [@"Hi There" dataUsingEncoding:NSUTF8StringEncoding];
-    NSData *salt = [DataFormatter hexStringToData:@"601b326a6e2f5ab48907ff13e474939b55a7e9d448696c0febd4621208715222"];
-    NSData *iv = [DataFormatter hexStringToData:@"e3a982494277626b8eacc3d6a750367c"];
+    NSData *message = [@"hello world" dataUsingEncoding:NSUTF8StringEncoding];
     
+    // salt for KDF
+    NSData *salt = [DataFormatter hexStringToData:@"601b326a6e2f5ab48907ff13e474939b55a7e9d448696c0febd4621208715222"];
+    // derive
     NSData *key = [Crypto deriveKey:password
                                salt:salt
                              rounds:kKDFRoundsTEST
                                 prf:kCCPRFHmacAlgSHA256];
     
-    NSData *encryptedData = [Crypto encrypt:msg
-                                        key:key
-                                         iv:iv];
+    // iv for encryption
+    NSData *iv = [DataFormatter hexStringToData:@"e3a982494277626b8eacc3d6a750367c"];
+    // encrypt
+    NSData *encryptedData = [Crypto encrypt:message key:key iv:iv];
+    // check encryption
+    XCTAssertEqualObjects([DataFormatter hexDataToString:encryptedData], @"ef970bd5d01d868c5e2314");
     
-    NSString *encryptedString = [DataFormatter hexDataToString:encryptedData];
-    XCTAssertEqualObjects(encryptedString, @"cf9b47edd7588386");
-    
-    
-    NSData *decryptedData = [Crypto decrypt:encryptedData
-                                        key:key
-                                         iv:iv];
-    
-    XCTAssertEqualObjects(decryptedData, msg);
-    
-    NSString *pwd = @"password";
-    NSString *message = @"hello world";
-    
-    salt = [DataFormatter hexStringToData:@"538f57ec7261c55e3820fd774234d64610fe826ff91dfee31f1f4861a6e3b3fc"];
-    iv = [DataFormatter hexStringToData:@"6fd42a46953789145a5ccec275000933"];
-    
-    key = [Crypto deriveKey:pwd
-                       salt:salt
-                     rounds:kPBKDFRoundsAES
-                        prf:kCCPRFHmacAlgSHA256];
-    
-    encryptedData = [Crypto encrypt:[message dataUsingEncoding:NSUTF8StringEncoding] key:key iv:iv];
-    
-    decryptedData = [Crypto decrypt:encryptedData key:key iv:iv];
-    NSString *decryptedString = [[[NSString alloc] initWithData:decryptedData encoding:NSUTF8StringEncoding] stringByTrimmingCharactersInSet:[NSCharacterSet controlCharacterSet]];
-    
-    XCTAssertEqualObjects([DataFormatter hexDataToString:encryptedData], @"746b4c44be563f1d47ecb1");
-    XCTAssertEqualObjects(decryptedString, message);
+    // decrypt
+    NSData *decryptedData = [Crypto decrypt:encryptedData key:key iv:iv];
+    // check decryption
+    XCTAssertEqualObjects(decryptedData, message);
 }
 
-- (void)test_Entropy2Mnemonic {
+- (void)test_BIP39_Entropy2Mnemonic {
     
+    // 12 words
     NSData *entropy = [DataFormatter hexStringToData:@"0c1e24e5917779d297e14d45f14e1a1a"];
     NSString *mnemonic = [Mnemonic generateMemnonic:entropy];
     XCTAssertEqualObjects(mnemonic, @"army van defense carry jealous true garbage claim echo media make crunch");
     
+    // 18 words
+    entropy = [DataFormatter hexStringToData:@"68c47602458957c948b89702721f2d40012f64bb94e51e61"];
+    mnemonic = [Mnemonic generateMemnonic:entropy];
+    XCTAssertEqualObjects(mnemonic, @"hand casual letter mention nice tool carry base act movie slender length base rather unusual original bunker another");
+    
+    // 24 words
     entropy = [DataFormatter hexStringToData:@"2041546864449caff939d32d574753fe684d3c947c3346713dd8423e74abcf8c"];
     mnemonic = [Mnemonic generateMemnonic:entropy];
     XCTAssertEqualObjects(mnemonic, @"cake apple borrow silk endorse fitness top denial coil riot stay wolf luggage oxygen faint major edit measure invite love trap field dilemma oblige");
