@@ -502,5 +502,52 @@
     }
 }
 
+/**  ------------------------------------------------------------
+ //  Example Proof of Work Algorithm
+ //  ------------------------------------------------------------
+ */
++ (NSDictionary *)proofOfWork:(NSData *)challenge difficulty:(NSInteger)diff {
+    
+    if (challenge == nil || diff == 0) {
+        return nil;
+    }
+    
+    // init vars
+    NSString *zeros = @"00000000000000000000000000000000";
+    NSData *hash = [DataFormatter hexStringToData:@"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"];
+    
+    // range of leading 0's to find
+    NSRange range = NSMakeRange(0, diff);
+    zeros = [zeros substringWithRange:range];
+    
+    NSInteger nonce = 0;
+    BOOL proceed = YES;
+    
+    // do work
+    while (proceed) {
+        @autoreleasepool {
+            NSMutableData *input = [[NSMutableData alloc] initWithData:challenge];
+            // hash challenge with concatenated nonce
+            [input appendData:[DataFormatter hexStringToData:[DataFormatter hexFromInt:nonce]]];
+            hash = [self SHA:input nbits:256];
+            
+            // check if valid
+            if ([[DataFormatter hexDataToString:[hash subdataWithRange:range]] substringToIndex:diff] == zeros) {
+                // return dictionary of valid proof parameters
+                NSMutableDictionary *dict = [[NSMutableDictionary alloc] initWithCapacity:2];
+                [dict setObject:hash forKey:@"proof"];
+                [dict setObject:[NSNumber numberWithInteger:nonce] forKey:@"nonce"];
+
+                return dict;
+            }
+            // check overflow
+            if (nonce++ >= kMaxNonce) {
+                proceed = NO;
+            }
+        }
+    }
+    
+    return nil;
+}
 
 @end
