@@ -24,6 +24,7 @@
 + (NSData *)generateRandomCrytoBytes:(size_t )Nbytes;
 
 // SHA hash
++ (NSData *)sha256:(NSData *)data;
 + (NSData *)SHA:(NSData *)data
           nbits:(NSInteger)nbytes;
 

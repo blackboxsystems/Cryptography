@@ -272,22 +272,22 @@ static const NSInteger kKDFRoundsTEST = 1024;
     
     // message digest
     NSString *message = @"hello world";
-    NSData *digest = [Crypto SHA:[message dataUsingEncoding:NSUTF8StringEncoding] nbits:256];
+    // key/hash length in bytes
+    NSInteger klen = 32;
     
-    // 2 x 256 x 256 bits of private hash values
-    NSMutableArray *priv_left = [[NSMutableArray alloc] initWithCapacity:256];
-    NSMutableArray *priv_right = [[NSMutableArray alloc] initWithCapacity:256];
+    NSData *digest = [Crypto sha256:[message dataUsingEncoding:NSUTF8StringEncoding]];
     
-    // 2 x 256 x 256 bits of hashed private arrays
-    NSMutableArray *pub_left = [[NSMutableArray alloc] initWithCapacity:256];
-    NSMutableArray *pub_right = [[NSMutableArray alloc] initWithCapacity:256];
-    NSMutableArray *pub = [[NSMutableArray alloc] initWithCapacity:512];
+    // 2 x 32 x 32 bytes of hashed private arrays
+    NSMutableArray *priv_left = [[NSMutableArray alloc] initWithCapacity:klen];
+    NSMutableArray *priv_right = [[NSMutableArray alloc] initWithCapacity:klen];
     
-    // convert the digest of the message (message hash) into binary form
+    // 2 x 32 x 32 bytes of hashed private arrays
+    NSMutableArray *pub_left = [[NSMutableArray alloc] initWithCapacity:klen];
+    NSMutableArray *pub_right = [[NSMutableArray alloc] initWithCapacity:klen];
+    NSMutableArray *pub = [[NSMutableArray alloc] initWithCapacity:(2 * klen)];
+    
+    // convert the digest of the message into binary form
     NSString *digestBinary = [DataFormatter hexToBinary:[DataFormatter hexDataToString:digest]];
-    
-    NSInteger mbytes = 32;
-    NSInteger mbits = 8 * mbytes;
     
     // populate arrays of hashes
     NSMutableData *KLeft = [[NSMutableData alloc] init];
@@ -297,14 +297,14 @@ static const NSInteger kKDFRoundsTEST = 1024;
         // deterministic creation of keys (even and odd nonces)
         [KLeft appendData:[[NSString stringWithFormat:@"%li",(2 * i)] dataUsingEncoding:NSUTF8StringEncoding]];
         [KRight appendData:[[NSString stringWithFormat:@"%li",(2 * i + 1)] dataUsingEncoding:NSUTF8StringEncoding]];
-        NSData *saltL = [Crypto SHA:KLeft nbits:mbits];
-        NSData *saltR = [Crypto SHA:KRight nbits:mbits];
+        NSData *saltL = [Crypto sha256:KLeft];
+        NSData *saltR = [Crypto sha256:KRight];
         [priv_left addObject:saltL];
         [priv_right addObject:saltR];
         
         // hash each of the private hashes for the corresponding public hash values
-        NSData *pubsaltL = [Crypto SHA:saltL nbits:mbits];
-        NSData *pubsaltR = [Crypto SHA:saltR nbits:mbits];
+        NSData *pubsaltL = [Crypto sha256:saltL];
+        NSData *pubsaltR = [Crypto sha256:saltR];
         [pub_left addObject:pubsaltL];
         [pub_right addObject:pubsaltR];
     }
@@ -326,7 +326,7 @@ static const NSInteger kKDFRoundsTEST = 1024;
         }
     }
     
-    NSData *condensed_signature = [Crypto SHA:sig nbits:mbits];
+    NSData *condensed_signature = [Crypto sha256:sig];
     
     XCTAssertEqualObjects([DataFormatter hexDataToString:condensed_signature], @"0f8b434d125b6a388a8e6f949c0b673dade6d0b4f3a210abb9b1720256811b0f");
     

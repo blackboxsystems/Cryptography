@@ -22,7 +22,7 @@
     
     NSData *byteData = nil;
     
-    if ((Nbytes > 0) && (Nbytes % 8 == 0)) {
+    if (Nbytes > 0) {
         uint8_t *bytes = malloc(Nbytes);
         int status = SecRandomCopyBytes(kSecRandomDefault, Nbytes, bytes);
         if (status != 0) {
@@ -31,6 +31,7 @@
         byteData = [NSData dataWithBytes:bytes length:Nbytes];
         free(bytes);
     }
+    
     return byteData;
 }
 
@@ -38,6 +39,17 @@
  //  SHA Hash Function
  //  ------------------------------------------------------------
  */
++ (NSData *)sha256:(NSData *)data {
+    
+    if (data == nil) {
+        return data;
+    }
+    
+    NSMutableData *digest = [[NSMutableData alloc] initWithLength:CC_SHA256_DIGEST_LENGTH];
+    (void) CC_SHA256(data.bytes, (CC_LONG) data.length, digest.mutableBytes);
+    
+    return digest;
+}
 + (NSData *)SHA:(NSData *)data
           nbits:(NSInteger)nbits {
     
@@ -206,12 +218,12 @@
         return nil;
     }
     
+    NSInteger nbits = key.length * 8;
+
     NSMutableData *Ki = [[NSMutableData alloc] initWithData:iv];
-    [Ki appendData:[[self SHA:key nbits:256] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
+    [Ki appendData:[[self SHA:key nbits:nbits] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
     
-    NSData *digest = [self HMAC:[self SHA:encryptedData nbits:key.length]
-                            key:Ki
-                          nbits:key.length];
+    NSData *digest = [self HMAC:[self SHA:encryptedData nbits:nbits] key:Ki nbits:nbits];
     
     // append encrypted data to hmac
     NSMutableData *mutableData = [[NSMutableData alloc] initWithData:digest];
@@ -228,15 +240,15 @@
     }
     
     NSInteger len = key.length;
+    NSInteger nbits = len * 8;
+
     NSData *mac = [data subdataWithRange:NSMakeRange(0, len)];
     NSData *encryptedData = [data subdataWithRange:NSMakeRange(len, data.length - len)];
     
     NSMutableData *Ki = [[NSMutableData alloc] initWithData:iv];
-    [Ki appendData:[[self SHA:key nbits:256] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
+    [Ki appendData:[[self SHA:key nbits:nbits] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
     
-    NSData *digestToCheck = [self HMAC:[self SHA:encryptedData nbits:key.length]
-                                   key:Ki
-                                 nbits:key.length];
+    NSData *digestToCheck = [self HMAC:[self SHA:encryptedData nbits:nbits] key:Ki nbits:nbits];
 
     // integrity check
     if ([digestToCheck isEqualToData:mac]) {
@@ -451,20 +463,21 @@
 + (NSData *)generateLamportSignature:(NSData *)digest {
     
     @autoreleasepool {
-        // 2 x 256 x 256 bits of private hash values
-        NSMutableArray *priv_left = [[NSMutableArray alloc] initWithCapacity:256];
-        NSMutableArray *priv_right = [[NSMutableArray alloc] initWithCapacity:256];
-        
-        // 2 x 256 x 256 bits of hashed private arrays
-        NSMutableArray *pub_left = [[NSMutableArray alloc] initWithCapacity:256];
-        NSMutableArray *pub_right = [[NSMutableArray alloc] initWithCapacity:256];
-        NSMutableArray *pub = [[NSMutableArray alloc] initWithCapacity:512];
-        
-        // convert the digest of the message (message hash) into its binary form
-        NSString *digestBinary = [DataFormatter hexToBinary:[DataFormatter hexDataToString:digest]];
         
         NSInteger mbytes = 32;
         NSInteger mbits = 8 * mbytes;
+        
+        // 2 x 32 x 32 bytes of private hash values
+        NSMutableArray *priv_left = [[NSMutableArray alloc] initWithCapacity:mbytes];
+        NSMutableArray *priv_right = [[NSMutableArray alloc] initWithCapacity:mbytes];
+        
+        // 2 x 32 x 32 bytes of hashed private arrays
+        NSMutableArray *pub_left = [[NSMutableArray alloc] initWithCapacity:32];
+        NSMutableArray *pub_right = [[NSMutableArray alloc] initWithCapacity:mbytes];
+        NSMutableArray *pub = [[NSMutableArray alloc] initWithCapacity:2*mbytes];
+        
+        // convert the digest of the message (message hash) into its binary form
+        NSString *digestBinary = [DataFormatter hexToBinary:[DataFormatter hexDataToString:digest]];
         
         // populate arrays of hashes
         for (NSInteger i = 0; i < digestBinary.length; i++) {
