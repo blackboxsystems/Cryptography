@@ -145,6 +145,33 @@
     return derivedKey;
 }
 
++ (NSUInteger)KDFRoundsForDerivationTime:(uint32_t)ms
+                             passwordLen:(size_t)passwordLen
+                              saltLength:(size_t)saltLen
+                             ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
+                        derivedKeyLength:(size_t)keyLen{
+    int result;
+    double derivationTimeMilliseconds = (double)ms;
+    
+    if (ms == 0 || ms > UINT32_MAX) {
+        derivationTimeMilliseconds = 1000;        // 1 second
+    }
+    
+    if (saltLen == 0 || passwordLen == 0) {
+        return 0;
+    }
+    
+    // Do the key derivation.
+    result = (int) CCCalibratePBKDF(kCCPBKDF2,
+                                    passwordLen,
+                                    saltLen,
+                                    ccAlgorithm,
+                                    keyLen,
+                                    (uint32_t)derivationTimeMilliseconds
+                                    );
+    
+    return (NSUInteger)result;
+}
 /**  ------------------------------------------------------------
  //  Encryption/Decryption
  //  ------------------------------------------------------------
@@ -461,7 +488,6 @@
     @autoreleasepool {
         
         NSInteger mbytes = 32;
-        NSInteger mbits = 8 * mbytes;
         
         // 2 x 32 x 32 bytes of private hash values
         NSMutableArray *priv_left = [[NSMutableArray alloc] initWithCapacity:mbytes];

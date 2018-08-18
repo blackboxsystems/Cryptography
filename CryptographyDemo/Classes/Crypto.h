@@ -31,6 +31,13 @@
                rounds:(NSInteger)rounds
                   prf:(CCPseudoRandomAlgorithm)prf;
 
+// estimating key derivation rounds
++ (NSUInteger)KDFRoundsForDerivationTime:(uint32_t)ms
+                             passwordLen:(size_t)passwordLen
+                              saltLength:(size_t)saltLen
+                             ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
+                        derivedKeyLength:(size_t)keyLen;
+
 // wrapper for encryption
 + (NSData *)encrypt:(NSData *)data
                 key:(NSData *)key

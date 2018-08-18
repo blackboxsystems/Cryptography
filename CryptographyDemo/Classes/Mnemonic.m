@@ -75,6 +75,79 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     return [self generateMemnonic:entropy];
 }
 
++ (NSData *)entropyFromMemnonic:(NSString *)mnemonic {
+    
+    if (mnemonic == nil) {
+        return nil;
+    }
+    
+    NSArray *words;
+    
+    if ([mnemonic componentsSeparatedByString:@" "].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@" "];
+    } else if ([mnemonic componentsSeparatedByString:@"-"].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@"-"];
+    } else if ([mnemonic componentsSeparatedByString:@"."].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@"."];
+    } else if ([mnemonic componentsSeparatedByString:@","].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@","];
+    }
+    
+    NSInteger nwords = words.count;
+    
+    if (nwords != kSeedWords12 && nwords != kSeedWords18 && nwords != kSeedWords24) {
+        return nil;
+    }
+    
+    NSArray *dictionary = [self getDictionary];
+    NSMutableArray *wordIndexes = [[NSMutableArray alloc] initWithCapacity:nwords];
+    NSInteger index = 0;
+    
+    for (NSInteger i = 0; i < nwords; i++)
+    {
+        index = 0;
+        for (NSString *word in dictionary)
+        {
+            if ([word isEqualToString:words[i]]) {
+                [wordIndexes addObject:[NSString stringWithFormat:@"%li",(NSInteger)index]];
+            }
+            index++;
+        }
+    }
+    
+    NSMutableString *binaries = [[NSMutableString alloc] init];
+    
+    for (NSInteger i = 0; i < nwords; i++)
+    {
+        NSString *str = [DataFormatter hexToBinary:[DataFormatter hexFromInt:(unsigned int)
+                                                    [wordIndexes[i] integerValue]]];
+        if (str.length > 11) {
+            str = [str substringFromIndex:str.length-11];
+        }
+        [binaries appendString:str];
+    }
+    
+    NSString *entropy = [DataFormatter binaryToHex:binaries];
+    NSData *entropy_data = [DataFormatter hexStringToData:entropy];
+    NSData *checksum = nil;
+    
+    if (binaries.length == 132)
+    {
+        entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, kSeedBytes16)];
+        checksum = [[Crypto sha:entropy_data nbits:256] subdataWithRange:NSMakeRange(0, 1)];
+    } else if (binaries.length == 198)
+    {
+        entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, kSeedBytes24)];
+        checksum = [[Crypto sha:entropy_data nbits:256] subdataWithRange:NSMakeRange(0, 1)];
+    } else if (binaries.length == 264)
+    {
+        entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, kSeedBytes32)];
+        checksum = [[Crypto sha:entropy_data nbits:256] subdataWithRange:NSMakeRange(0, 2)];
+    }
+    
+    return entropy_data;
+}
+
 + (NSArray *)getDictionary {
     
     // get file data

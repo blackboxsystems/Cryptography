@@ -100,5 +100,20 @@
     return [self binaryStringToInt:[self hexToBinary:[self hexDataToString:hex]]];
 }
 
++ (NSString *)binaryToHex:(NSString *)binaryString{
+    
+    NSMutableString *str = [[NSMutableString alloc] init];
+    NSInteger nbits = binaryString.length;
+    
+    NSInteger nbuckets = floor(nbits/4);
+    
+    for (NSInteger i = 0; i < nbuckets; i++) {
+        NSString *b = [[binaryString lowercaseString] substringWithRange:NSMakeRange(i*4, 4)];
+        [str appendString:[self binaryToHex:b]];
+    }
+    
+    return str;
+}
+
 
 @end

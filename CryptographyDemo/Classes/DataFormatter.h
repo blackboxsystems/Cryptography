@@ -15,5 +15,7 @@
 // Binary String to Integer
 + (int)binaryStringToInt:(NSString *) binaryString;
 
+// Binary String to Hex
++ (NSString *)binaryToHex:(NSString *)binaryString;
 
 @end

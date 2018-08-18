@@ -9,6 +9,9 @@
 // generate mnemonic with N words (12, 18, 24)
 + (NSString *)randomMemnonic:(NSInteger)Nwords;
 
+// convert mnemonic phrase to its corresponding byte entropy
++ (NSData *)entropyFromMemnonic:(NSString *)mnemonic;
+
 // read seed_dictionary.txt and return data
 + (NSArray *)getDictionary;
 
