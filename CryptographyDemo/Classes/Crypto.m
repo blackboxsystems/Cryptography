@@ -151,10 +151,10 @@
                              ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
                         derivedKeyLength:(size_t)keyLen{
     int result;
-    double derivationTimeMilliseconds = (double)ms;
+    uint32_t derivationTimeMilliseconds = ms;
     
     if (ms == 0 || ms > UINT32_MAX) {
-        derivationTimeMilliseconds = 1000;        // 1 second
+        derivationTimeMilliseconds = 1000;  // 1 second
     }
     
     if (saltLen == 0 || passwordLen == 0) {
