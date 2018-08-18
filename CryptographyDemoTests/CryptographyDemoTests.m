@@ -1,11 +1,3 @@
-//
-//  CryptographyDemoTests.m
-//  CryptographyDemoTests
-//
-//  Created by Hello World on 5/15/18.
-//  Copyright © 2018 blackboxsystems. All rights reserved.
-//
-
 #import <XCTest/XCTest.h>
 #import "Crypto.h"
 #import "Mnemonic.h"

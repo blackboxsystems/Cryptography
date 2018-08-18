@@ -1,11 +1,3 @@
-//
-//  Mnemonic.m
-//  CryptographyDemo
-//
-//  Created by Hello World on 5/15/18.
-//  Copyright © 2018 blackboxsystems. All rights reserved.
-//
-
 #import "Mnemonic.h"
 
 @implementation Mnemonic : NSObject
