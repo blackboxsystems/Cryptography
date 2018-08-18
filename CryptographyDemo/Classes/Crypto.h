@@ -25,7 +25,7 @@
 
 // SHA hash
 + (NSData *)sha256:(NSData *)data;
-+ (NSData *)SHA:(NSData *)data
++ (NSData *)sha:(NSData *)data
           nbits:(NSInteger)nbytes;
 
 // Hashed Message Authentication Code

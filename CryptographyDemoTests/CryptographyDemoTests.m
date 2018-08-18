@@ -33,16 +33,16 @@ static const NSInteger kKDFRoundsTEST = 1024;
     
     // message to hash
     NSData *msg = [@"test" dataUsingEncoding:NSUTF8StringEncoding];
-    NSData *hash = [Crypto SHA:msg nbits:224];
+    NSData *hash = [Crypto sha:msg nbits:224];
     XCTAssertEqualObjects([DataFormatter hexDataToString:hash], @"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809");
     
-    hash = [Crypto SHA:msg nbits:256];
+    hash = [Crypto sha:msg nbits:256];
     XCTAssertEqualObjects([DataFormatter hexDataToString:hash], @"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08");
     
-    hash = [Crypto SHA:msg nbits:384];
+    hash = [Crypto sha:msg nbits:384];
     XCTAssertEqualObjects([DataFormatter hexDataToString:hash], @"768412320f7b0aa5812fce428dc4706b3cae50e02a64caa16a782249bfe8efc4b7ef1ccb126255d196047dfedf17a0a9");
     
-    hash = [Crypto SHA:msg nbits:512];
+    hash = [Crypto sha:msg nbits:512];
     XCTAssertEqualObjects([DataFormatter hexDataToString:hash], @"ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff");
 }
 
@@ -318,8 +318,8 @@ static const NSInteger kKDFRoundsTEST = 1024;
     // for each bit in the hash, based on the value of the bit, we pick one number
     // from the corresponding pairs of numbers that comprise the private key
     for (NSInteger j = 0; j < digestBinary.length; j++) {
-        NSString *bite = [digestBinary substringWithRange:NSMakeRange(j, 1)];
-        if ([bite isEqualToString:@"1"]) {
+        NSString *bit = [digestBinary substringWithRange:NSMakeRange(j, 1)];
+        if ([bit isEqualToString:@"1"]) {
             [sig appendData:[priv_left objectAtIndex:j]];
         } else {
             [sig appendData:[priv_right objectAtIndex:j]];

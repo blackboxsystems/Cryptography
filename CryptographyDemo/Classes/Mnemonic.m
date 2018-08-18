@@ -42,7 +42,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     NSMutableData *bitmap = [[NSMutableData alloc] initWithData:entropy];
     
     // append checksum to the seed
-    NSData *hash = [Crypto SHA:entropy nbits:nbytes*8];
+    NSData *hash = [Crypto sha:entropy nbits:nbytes*8];
     NSData *checksum = [hash subdataWithRange:NSMakeRange(0, 2)];
     [bitmap appendData:checksum];
     
@@ -90,7 +90,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     NSData *data = [NSData dataWithContentsOfFile:filePath];
     
     // integrity check on file
-    NSData *fileHash = [Crypto SHA:data nbits:256];
+    NSData *fileHash = [Crypto sha256:data];
     assert([[DataFormatter hexDataToString:fileHash] isEqualToString:@"c1be978261f9acab4ab29806c57de07c7bea0a06acbc94f227d248da9b290c6b"]);
     
     // parse into word array
