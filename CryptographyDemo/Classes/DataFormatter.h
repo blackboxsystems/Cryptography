@@ -1,11 +1,3 @@
-//
-//  DataFormatter.h
-//  CryptographyDemo
-//
-//  Created by Hello World on 5/15/18.
-//  Copyright © 2018 blackboxsystems. All rights reserved.
-//
-
 #import <Foundation/Foundation.h>
 
 @interface DataFormatter : NSObject
@@ -23,5 +15,7 @@
 // Binary String to Integer
 + (int)binaryStringToInt:(NSString *) binaryString;
 
+// Binary String to Hex
++ (NSString *)binaryToHex:(NSString *)binaryString;
 
 @end

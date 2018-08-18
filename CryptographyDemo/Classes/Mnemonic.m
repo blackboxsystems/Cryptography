@@ -1,11 +1,3 @@
-//
-//  Mnemonic.m
-//  CryptographyDemo
-//
-//  Created by Hello World on 5/15/18.
-//  Copyright © 2018 blackboxsystems. All rights reserved.
-//
-
 #import "Mnemonic.h"
 
 @implementation Mnemonic : NSObject
@@ -42,7 +34,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     NSMutableData *bitmap = [[NSMutableData alloc] initWithData:entropy];
     
     // append checksum to the seed
-    NSData *hash = [Crypto SHA:entropy nbits:nbytes*8];
+    NSData *hash = [Crypto sha:entropy nbits:nbytes*8];
     NSData *checksum = [hash subdataWithRange:NSMakeRange(0, 2)];
     [bitmap appendData:checksum];
     
@@ -83,6 +75,79 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     return [self generateMemnonic:entropy];
 }
 
++ (NSData *)entropyFromMemnonic:(NSString *)mnemonic {
+    
+    if (mnemonic == nil) {
+        return nil;
+    }
+    
+    NSArray *words;
+    
+    if ([mnemonic componentsSeparatedByString:@" "].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@" "];
+    } else if ([mnemonic componentsSeparatedByString:@"-"].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@"-"];
+    } else if ([mnemonic componentsSeparatedByString:@"."].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@"."];
+    } else if ([mnemonic componentsSeparatedByString:@","].count > 0) {
+        words = [mnemonic componentsSeparatedByString:@","];
+    }
+    
+    NSInteger nwords = words.count;
+    
+    if (nwords != kSeedWords12 && nwords != kSeedWords18 && nwords != kSeedWords24) {
+        return nil;
+    }
+    
+    NSArray *dictionary = [self getDictionary];
+    NSMutableArray *wordIndexes = [[NSMutableArray alloc] initWithCapacity:nwords];
+    NSInteger index = 0;
+    
+    for (NSInteger i = 0; i < nwords; i++)
+    {
+        index = 0;
+        for (NSString *word in dictionary)
+        {
+            if ([word isEqualToString:words[i]]) {
+                [wordIndexes addObject:[NSString stringWithFormat:@"%li",(NSInteger)index]];
+            }
+            index++;
+        }
+    }
+    
+    NSMutableString *binaries = [[NSMutableString alloc] init];
+    
+    for (NSInteger i = 0; i < nwords; i++)
+    {
+        NSString *str = [DataFormatter hexToBinary:[DataFormatter hexFromInt:(unsigned int)
+                                                    [wordIndexes[i] integerValue]]];
+        if (str.length > 11) {
+            str = [str substringFromIndex:str.length-11];
+        }
+        [binaries appendString:str];
+    }
+    
+    NSString *entropy = [DataFormatter binaryToHex:binaries];
+    NSData *entropy_data = [DataFormatter hexStringToData:entropy];
+    NSData *checksum = nil;
+    
+    if (binaries.length == 132)
+    {
+        entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, kSeedBytes16)];
+        checksum = [[Crypto sha:entropy_data nbits:256] subdataWithRange:NSMakeRange(0, 1)];
+    } else if (binaries.length == 198)
+    {
+        entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, kSeedBytes24)];
+        checksum = [[Crypto sha:entropy_data nbits:256] subdataWithRange:NSMakeRange(0, 1)];
+    } else if (binaries.length == 264)
+    {
+        entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, kSeedBytes32)];
+        checksum = [[Crypto sha:entropy_data nbits:256] subdataWithRange:NSMakeRange(0, 2)];
+    }
+    
+    return entropy_data;
+}
+
 + (NSArray *)getDictionary {
     
     // get file data
@@ -90,7 +155,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     NSData *data = [NSData dataWithContentsOfFile:filePath];
     
     // integrity check on file
-    NSData *fileHash = [Crypto SHA:data nbits:256];
+    NSData *fileHash = [Crypto sha256:data];
     assert([[DataFormatter hexDataToString:fileHash] isEqualToString:@"c1be978261f9acab4ab29806c57de07c7bea0a06acbc94f227d248da9b290c6b"]);
     
     // parse into word array

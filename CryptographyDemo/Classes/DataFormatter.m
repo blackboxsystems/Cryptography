@@ -1,11 +1,3 @@
-//
-//  DataFormatter.m
-//  CryptographyDemo
-//
-//  Created by Hello World on 5/15/18.
-//  Copyright © 2018 blackboxsystems. All rights reserved.
-//
-
 #import "DataFormatter.h"
 
 @implementation DataFormatter
@@ -106,6 +98,21 @@
 
 + (int)hexDataToInt:(NSData *)hex{
     return [self binaryStringToInt:[self hexToBinary:[self hexDataToString:hex]]];
+}
+
++ (NSString *)binaryToHex:(NSString *)binaryString{
+    
+    NSMutableString *str = [[NSMutableString alloc] init];
+    NSInteger nbits = binaryString.length;
+    
+    NSInteger nbuckets = floor(nbits/4);
+    
+    for (NSInteger i = 0; i < nbuckets; i++) {
+        NSString *b = [[binaryString lowercaseString] substringWithRange:NSMakeRange(i*4, 4)];
+        [str appendString:[self binaryToHex:b]];
+    }
+    
+    return str;
 }
 
 

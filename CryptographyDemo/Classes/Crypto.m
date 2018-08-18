@@ -1,11 +1,3 @@
-//
-//  Crypto.m
-//  CryptographyDemo
-//
-//  Created by Hello World on 5/15/18.
-//  Copyright © 2018 blackboxsystems. All rights reserved.
-//
-
 #import "Crypto.h"
 
 
@@ -50,10 +42,10 @@
     
     return digest;
 }
-+ (NSData *)SHA:(NSData *)data
++ (NSData *)sha:(NSData *)data
           nbits:(NSInteger)nbits {
     
-    if (data == nil || (nbits % 8 != 0)) {
+    if (data == nil) {
         return nil;
     }
     
@@ -93,7 +85,7 @@
              key:(NSData *)key
            nbits:(NSInteger)nbits {
     
-    if (data == nil || key == nil || nbits % 8 != 0) {
+    if (data == nil || key == nil) {
         return nil;
     }
     
@@ -153,6 +145,33 @@
     return derivedKey;
 }
 
++ (NSUInteger)KDFRoundsForDerivationTime:(uint32_t)ms
+                             passwordLen:(size_t)passwordLen
+                              saltLength:(size_t)saltLen
+                             ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
+                        derivedKeyLength:(size_t)keyLen{
+    int result;
+    double derivationTimeMilliseconds = (double)ms;
+    
+    if (ms == 0 || ms > UINT32_MAX) {
+        derivationTimeMilliseconds = 1000;        // 1 second
+    }
+    
+    if (saltLen == 0 || passwordLen == 0) {
+        return 0;
+    }
+    
+    // Do the key derivation.
+    result = (int) CCCalibratePBKDF(kCCPBKDF2,
+                                    passwordLen,
+                                    saltLen,
+                                    ccAlgorithm,
+                                    keyLen,
+                                    (uint32_t)derivationTimeMilliseconds
+                                    );
+    
+    return (NSUInteger)result;
+}
 /**  ------------------------------------------------------------
  //  Encryption/Decryption
  //  ------------------------------------------------------------
@@ -221,9 +240,11 @@
     NSInteger nbits = key.length * 8;
 
     NSMutableData *Ki = [[NSMutableData alloc] initWithData:iv];
-    [Ki appendData:[[self SHA:key nbits:nbits] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
+    [Ki appendData:[[self sha256:key] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
     
-    NSData *digest = [self HMAC:[self SHA:encryptedData nbits:nbits] key:Ki nbits:nbits];
+    NSData *digest = [self HMAC:[self sha256:encryptedData]
+                            key:Ki
+                          nbits:nbits];
     
     // append encrypted data to hmac
     NSMutableData *mutableData = [[NSMutableData alloc] initWithData:digest];
@@ -246,9 +267,11 @@
     NSData *encryptedData = [data subdataWithRange:NSMakeRange(len, data.length - len)];
     
     NSMutableData *Ki = [[NSMutableData alloc] initWithData:iv];
-    [Ki appendData:[[self SHA:key nbits:nbits] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
+    [Ki appendData:[[self sha256:key] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
     
-    NSData *digestToCheck = [self HMAC:[self SHA:encryptedData nbits:nbits] key:Ki nbits:nbits];
+    NSData *digestToCheck = [self HMAC:[self sha256:encryptedData]
+                                   key:Ki
+                                 nbits:nbits];
 
     // integrity check
     if ([digestToCheck isEqualToData:mac]) {
@@ -465,14 +488,13 @@
     @autoreleasepool {
         
         NSInteger mbytes = 32;
-        NSInteger mbits = 8 * mbytes;
         
         // 2 x 32 x 32 bytes of private hash values
         NSMutableArray *priv_left = [[NSMutableArray alloc] initWithCapacity:mbytes];
         NSMutableArray *priv_right = [[NSMutableArray alloc] initWithCapacity:mbytes];
         
         // 2 x 32 x 32 bytes of hashed private arrays
-        NSMutableArray *pub_left = [[NSMutableArray alloc] initWithCapacity:32];
+        NSMutableArray *pub_left = [[NSMutableArray alloc] initWithCapacity:mbytes];
         NSMutableArray *pub_right = [[NSMutableArray alloc] initWithCapacity:mbytes];
         NSMutableArray *pub = [[NSMutableArray alloc] initWithCapacity:2*mbytes];
         
@@ -487,8 +509,8 @@
             [priv_right addObject:saltR];
             
             // hash each of the private hashes for the corresponding public hash values
-            NSData *pubsaltL = [Crypto SHA:saltL nbits:mbits];
-            NSData *pubsaltR = [Crypto SHA:saltR nbits:mbits];
+            NSData *pubsaltL = [Crypto sha256:saltL];
+            NSData *pubsaltR = [Crypto sha256:saltR];
             [pub_left addObject:pubsaltL];
             [pub_right addObject:pubsaltR];
         }
@@ -510,7 +532,6 @@
             }
         }
         
-//        NSData *condensed_signature = [Crypto SHA:sig nbits:mbits];
         return sig;
     }
 }
@@ -542,7 +563,7 @@
             NSMutableData *input = [[NSMutableData alloc] initWithData:challenge];
             // hash challenge with concatenated nonce
             [input appendData:[DataFormatter hexStringToData:[DataFormatter hexFromInt:nonce]]];
-            hash = [self SHA:input nbits:256];
+            hash = [self sha256:input];
             
             // check if valid
             if ([[DataFormatter hexDataToString:[hash subdataWithRange:range]] substringToIndex:diff] == zeros) {

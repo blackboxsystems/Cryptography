@@ -1,11 +1,3 @@
-//
-//  Crypto.h
-//  CryptographyDemo
-//
-//  Created by Hello World on 5/15/18.
-//  Copyright © 2018 blackboxsystems. All rights reserved.
-//
-
 #import <Foundation/Foundation.h>
 #import <CommonCrypto/CommonDigest.h>
 #import <CommonCrypto/CommonCryptor.h>
@@ -25,7 +17,7 @@
 
 // SHA hash
 + (NSData *)sha256:(NSData *)data;
-+ (NSData *)SHA:(NSData *)data
++ (NSData *)sha:(NSData *)data
           nbits:(NSInteger)nbytes;
 
 // Hashed Message Authentication Code
@@ -38,6 +30,13 @@
                  salt:(NSData *)salt
                rounds:(NSInteger)rounds
                   prf:(CCPseudoRandomAlgorithm)prf;
+
+// estimating key derivation rounds
++ (NSUInteger)KDFRoundsForDerivationTime:(uint32_t)ms
+                             passwordLen:(size_t)passwordLen
+                              saltLength:(size_t)saltLen
+                             ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
+                        derivedKeyLength:(size_t)keyLen;
 
 // wrapper for encryption
 + (NSData *)encrypt:(NSData *)data
