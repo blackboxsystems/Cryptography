@@ -167,7 +167,7 @@
                                     saltLen,
                                     ccAlgorithm,
                                     keyLen,
-                                    (uint32_t)derivationTimeMilliseconds
+                                    derivationTimeMilliseconds
                                     );
     
     return (NSUInteger)result;
