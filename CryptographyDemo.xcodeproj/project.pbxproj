@@ -18,6 +18,7 @@
 		CE5F262920ABB97100518422 /* DataFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = CE5F262820ABB97100518422 /* DataFormatter.m */; };
 		CE5F262C20ABB99C00518422 /* Mnemonic.m in Sources */ = {isa = PBXBuildFile; fileRef = CE5F262B20ABB99C00518422 /* Mnemonic.m */; };
 		CE5F263120ABBE6400518422 /* seed_dictionary.txt in Resources */ = {isa = PBXBuildFile; fileRef = CE5F263020ABBE6400518422 /* seed_dictionary.txt */; };
+		CEC540A52128A2E5008032F7 /* KeychainWrapperMock.m in Sources */ = {isa = PBXBuildFile; fileRef = CEC540A32128A179008032F7 /* KeychainWrapperMock.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,8 @@
 		CE5F262A20ABB99C00518422 /* Mnemonic.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Mnemonic.h; sourceTree = "<group>"; };
 		CE5F262B20ABB99C00518422 /* Mnemonic.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Mnemonic.m; sourceTree = "<group>"; };
 		CE5F263020ABBE6400518422 /* seed_dictionary.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = seed_dictionary.txt; sourceTree = "<group>"; };
+		CEC540A22128A179008032F7 /* KeychainWrapperMock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeychainWrapperMock.h; sourceTree = "<group>"; };
+		CEC540A32128A179008032F7 /* KeychainWrapperMock.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeychainWrapperMock.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +113,8 @@
 			isa = PBXGroup;
 			children = (
 				CE5F261720AB997F00518422 /* CryptographyDemoTests.m */,
+				CEC540A22128A179008032F7 /* KeychainWrapperMock.h */,
+				CEC540A32128A179008032F7 /* KeychainWrapperMock.m */,
 				CE5F261920AB997F00518422 /* Info.plist */,
 			);
 			path = CryptographyDemoTests;
@@ -244,6 +249,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CE5F261820AB997F00518422 /* CryptographyDemoTests.m in Sources */,
+				CEC540A52128A2E5008032F7 /* KeychainWrapperMock.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
