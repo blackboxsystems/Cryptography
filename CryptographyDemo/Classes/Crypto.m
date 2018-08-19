@@ -524,8 +524,8 @@
         // for each bit in the hash, based on the value of the bit, we pick one number
         // from the corresponding pairs of numbers that comprise the private key
         for (NSInteger j = 0; j < digestBinary.length; j++) {
-            NSString *bite = [digestBinary substringWithRange:NSMakeRange(j, 1)];
-            if ([bite isEqualToString:@"1"]) {
+            NSString *bit = [digestBinary substringWithRange:NSMakeRange(j, 1)];
+            if ([bit isEqualToString:@"1"]) {
                 [sig appendData:[priv_left objectAtIndex:j]];
             } else {
                 [sig appendData:[priv_right objectAtIndex:j]];

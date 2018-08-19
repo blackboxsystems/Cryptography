@@ -211,7 +211,7 @@
     
     CFTypeRef result;
     status = SecItemCopyMatching((__bridge CFDictionaryRef)privateKeyAttr, &result);
-    NSLog(@"result: %@", result);
+
     if (status == errSecSuccess) {
         return (SecKeyRef)result;
     }
