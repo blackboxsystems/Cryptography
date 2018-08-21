@@ -270,11 +270,11 @@ static const NSInteger kKDFRoundsTEST = 1024;
     
     NSData *digest = [Crypto sha256:[message dataUsingEncoding:NSUTF8StringEncoding]];
     
-    // 2 x 32 x 32 bytes of hashed private arrays
+    // 2 x 32 x 32 bytes of private key data
     NSMutableArray *priv_left = [[NSMutableArray alloc] initWithCapacity:klen];
     NSMutableArray *priv_right = [[NSMutableArray alloc] initWithCapacity:klen];
     
-    // 2 x 32 x 32 bytes of hashed private arrays
+    // 2 x 32 x 32 bytes of public key data (ie. hashed private key data)
     NSMutableArray *pub_left = [[NSMutableArray alloc] initWithCapacity:klen];
     NSMutableArray *pub_right = [[NSMutableArray alloc] initWithCapacity:klen];
     NSMutableArray *pub = [[NSMutableArray alloc] initWithCapacity:(2 * klen)];
@@ -292,16 +292,18 @@ static const NSInteger kKDFRoundsTEST = 1024;
         [KRight appendData:[[NSString stringWithFormat:@"%li",(2 * i + 1)] dataUsingEncoding:NSUTF8StringEncoding]];
         NSData *saltL = [Crypto sha256:KLeft];
         NSData *saltR = [Crypto sha256:KRight];
+        // generate private key byte array
         [priv_left addObject:saltL];
         [priv_right addObject:saltR];
         
-        // hash each of the private hashes for the corresponding public hash values
+        // generate public key data - hash of private key data
         NSData *pubsaltL = [Crypto sha256:saltL];
         NSData *pubsaltR = [Crypto sha256:saltR];
         [pub_left addObject:pubsaltL];
         [pub_right addObject:pubsaltR];
     }
     
+    // construct left/right pairs of public keys
     [pub addObject:pub_left];
     [pub addObject:pub_right];
     
