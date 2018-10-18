@@ -8,8 +8,28 @@
 // key derivation rounds
 #define kPBKDFRoundsAES 4096
 #define kMaxNonce 4294967295
+#define kAES256_IV_LENGTH 16
+#define kAES256_KEY_LENGTH 32
+#define kSHAHMAC256_SALT_LENGTH 32
+#define kSHAHMAC512_SALT_LENGTH 64
+
+
 
 @interface Crypto : NSObject
+
+
+// encryption algorithm type
+typedef NS_ENUM(NSInteger, BBEncryptionMode) {
+    BBEncryptAES = kCCAlgorithmAES,
+    BBEncryptOTP = 7
+};
+
+// key derivation mode
+typedef NS_ENUM(NSInteger, BBKeyDerivationMode) {
+    BBDeriveKEY = 0,
+    BBDeriveAES = 1,
+    BBDeriveOTHER = 2
+};
 
 
 // cryptographically secure random bytes
@@ -32,11 +52,12 @@
                   prf:(CCPseudoRandomAlgorithm)prf;
 
 // estimating key derivation rounds
-+ (NSUInteger)KDFRoundsForDerivationTime:(uint32_t)ms
-                             passwordLen:(size_t)passwordLen
-                              saltLength:(size_t)saltLen
++ (NSUInteger)KDFRoundsForDerivationTime:(double)ms
+                              saltLength:(size_t)saltLength
                              ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
-                        derivedKeyLength:(size_t)keyLen;
+                        derivedKeyLength:(size_t)keyLength;
+
++ (NSData *)getIV:(NSInteger)nbytes;
 
 // wrapper for encryption
 + (NSData *)encrypt:(NSData *)data

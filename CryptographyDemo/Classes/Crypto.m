@@ -145,29 +145,30 @@
     return derivedKey;
 }
 
-+ (NSUInteger)KDFRoundsForDerivationTime:(uint32_t)ms
-                             passwordLen:(size_t)passwordLen
-                              saltLength:(size_t)saltLen
++ (NSUInteger)KDFRoundsForDerivationTime:(double)ms
+                              saltLength:(size_t)saltLength
                              ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
-                        derivedKeyLength:(size_t)keyLen{
-    int result;
-    uint32_t derivationTimeMilliseconds = ms;
+                        derivedKeyLength:(size_t)keyLength{
     
-    if (ms == 0 || ms > UINT32_MAX) {
-        derivationTimeMilliseconds = 1000;  // 1 second
+    int result;
+    double derivationTimeMilliseconds = ms;
+    
+    // check to default if needed (1000 milliseconds = 1 second)
+    if (ms == 0.0 || ms > (double)UINT32_MAX) {
+        derivationTimeMilliseconds = 1000.0;
     }
     
-    if (saltLen == 0 || passwordLen == 0) {
+    if (saltLength == 0) {
         return 0;
     }
     
-    // Do the key derivation.
+    // key derivation calculation
     result = (int) CCCalibratePBKDF(kCCPBKDF2,
-                                    passwordLen,
-                                    saltLen,
+                                    8,
+                                    saltLength,
                                     ccAlgorithm,
-                                    keyLen,
-                                    derivationTimeMilliseconds
+                                    keyLength,
+                                    (uint32_t) derivationTimeMilliseconds
                                     );
     
     return (NSUInteger)result;
@@ -280,6 +281,10 @@
     }
     
     return nil;
+}
+
++ (NSData *)getIV:(NSInteger)nbytes{
+    return [[Crypto sha256:[self generateRandomCrytoBytes:nbytes]] subdataWithRange:NSMakeRange(0, nbytes)];
 }
 
 
