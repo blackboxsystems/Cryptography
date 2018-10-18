@@ -143,7 +143,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
         nbytes = kSeedBytes32;
     }
     entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, nbytes)];
-    checksum = [[Crypto sha:entropy_data nbits:256] subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes32 ? 2 : 1))];
+    checksum = [[Crypto sha256:entropy_data] subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes32 ? 2 : 1))];
     
     NSData *hash = [Crypto sha:entropy_data nbits:nbytes*8];
     NSData *checksum_hash = [hash subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes32 ? 2 : 1))];

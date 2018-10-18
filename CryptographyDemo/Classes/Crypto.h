@@ -3,6 +3,7 @@
 #import <CommonCrypto/CommonCryptor.h>
 #import <CommonCrypto/CommonKeyDerivation.h>
 #import "DataFormatter.h"
+#import "Protocol.h"
 
 
 // key derivation rounds
@@ -13,23 +14,10 @@
 #define kSHAHMAC256_SALT_LENGTH 32
 #define kSHAHMAC512_SALT_LENGTH 64
 
-
+#define kKDFRoundsDigest256 924137
+#define kKDFRoundsDigest512 656621
 
 @interface Crypto : NSObject
-
-
-// encryption algorithm type
-typedef NS_ENUM(NSInteger, BBEncryptionMode) {
-    BBEncryptAES = kCCAlgorithmAES,
-    BBEncryptOTP = 7
-};
-
-// key derivation mode
-typedef NS_ENUM(NSInteger, BBKeyDerivationMode) {
-    BBDeriveKEY = 0,
-    BBDeriveAES = 1,
-    BBDeriveOTHER = 2
-};
 
 
 // cryptographically secure random bytes
@@ -41,19 +29,20 @@ typedef NS_ENUM(NSInteger, BBKeyDerivationMode) {
           nbits:(NSInteger)nbytes;
 
 // Hashed Message Authentication Code
-+ (NSData *)HMAC:(NSData *)data
++ (NSData *)hmac:(NSData *)data
              key:(NSData *)key
            nbits:(NSInteger)digestSize;
 
 // key derivation
 + (NSData *)deriveKey:(NSString *)password
                  salt:(NSData *)salt
-               rounds:(NSInteger)rounds
-                  prf:(CCPseudoRandomAlgorithm)prf;
+                 mode:(BBKeyDerivationMode)m
+               rounds:(NSInteger)rounds;
 
-// estimating key derivation rounds
+#pragma mark - KEY DERIVATION ROUNDS
 + (NSUInteger)KDFRoundsForDerivationTime:(double)ms
-                              saltLength:(size_t)saltLength
+                          passwordLength:(size_t)passwordLen
+                              saltLength:(size_t)saltLen
                              ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
                         derivedKeyLength:(size_t)keyLength;
 
@@ -79,12 +68,13 @@ typedef NS_ENUM(NSInteger, BBKeyDerivationMode) {
                        key:(NSData *)key
                         iv:(NSData *)iv;
 
-// symmetric key encryption
+#pragma mark - SYMMETRIC ENCRYPTION
 + (NSData *)doCipher:(NSData *)plainText
-                 key:(NSData *)symmetricKey
+                 key:(NSData *)key
              context:(CCOperation)encryptOrDecrypt
                 mode:(CCMode)mode
-             padding:(CCOptions *)pkcs7
+           algorithm:(CCAlgorithm)algo
+             padding:(CCOptions *)padding
                   iv:(NSData *)iv;
 
 // xor operation

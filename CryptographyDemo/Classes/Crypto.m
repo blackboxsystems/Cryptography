@@ -81,7 +81,7 @@
  //  Hashed Message Authentication Code
  //  ------------------------------------------------------------
  */
-+ (NSData *)HMAC:(NSData *)data
++ (NSData *)hmac:(NSData *)data
              key:(NSData *)key
            nbits:(NSInteger)nbits {
     
@@ -121,31 +121,72 @@
  //  Key Derivation
  //  ------------------------------------------------------------
  */
+#pragma mark - Password-Based Key Derivation (PBKDF2)
 + (NSData *)deriveKey:(NSString *)password
                  salt:(NSData *)salt
-               rounds:(NSInteger)rounds
-                  prf:(CCPseudoRandomAlgorithm)prf {
+                 mode:(BBKeyDerivationMode)mode
+               rounds:(NSInteger)rounds{
     
-    if (salt == nil || password == nil) {
+    NSMutableData *derivedKey = [NSMutableData dataWithLength:(mode == BBDeriveKEY ? 64 :
+                                                               (mode == BBDeriveAES ? 32 : salt.length))];
+    
+    CCPseudoRandomAlgorithm prf = (salt.length == 28 ? kCCPRFHmacAlgSHA224 :
+                                   (salt.length == 32 ? kCCPRFHmacAlgSHA256 :
+                                    (salt.length == 36 ? kCCPRFHmacAlgSHA384 : kCCPRFHmacAlgSHA512)));
+    if (password.length == 0 || rounds == 0) {
         return nil;
     }
     
-    NSMutableData *derivedKey = [NSMutableData dataWithLength:salt.length];
+    int result = 0;
+    switch (mode) {
+            // passphrase derived key
+        case BBDeriveKEY:
+            result = CCKeyDerivationPBKDF(kCCPBKDF2,                // algorithm
+                                          password.UTF8String,      // password
+                                          password.length,          // password length
+                                          salt.bytes,               // salt bytes
+                                          salt.length,              // salt length
+                                          kCCPRFHmacAlgSHA512,      // PRF
+                                          (unsigned int)rounds,     // rounds
+                                          derivedKey.mutableBytes,  // derivedKey
+                                          derivedKey.length);       // derivedKeyLen
+            break;
+            
+            // secure enclave device biometry key
+        case BBDeriveAES:
+            result = CCKeyDerivationPBKDF(kCCPBKDF2,
+                                          password.UTF8String,
+                                          password.length,
+                                          salt.bytes,
+                                          salt.length,
+                                          kCCPRFHmacAlgSHA256,
+                                          (unsigned int)rounds,
+                                          derivedKey.mutableBytes,
+                                          derivedKey.length);
+            break;
+        default:
+            result = CCKeyDerivationPBKDF(kCCPBKDF2,
+                                          password.UTF8String,
+                                          password.length,
+                                          salt.bytes,
+                                          salt.length,
+                                          prf,
+                                          (unsigned int)rounds,
+                                          derivedKey.mutableBytes,
+                                          derivedKey.length);
+            break;
+    }
     
-    (void)CCKeyDerivationPBKDF(kCCPBKDF2,                // algorithm
-                               password.UTF8String,      // password
-                               password.length,          // password length
-                               salt.bytes,               // salt bytes
-                               salt.length,              // salt length
-                               prf,                      // PRF (HMAC-SHA512/HMAC-SHA256)
-                               (unsigned int)rounds,     // number of rounds
-                               derivedKey.mutableBytes,  // derived key
-                               derivedKey.length);       // derived key length
+    if (result != kCCSuccess) {
+        return nil;
+    }
     
     return derivedKey;
 }
 
+// calculate number of rounds for time of PBKDF2 derivation
 + (NSUInteger)KDFRoundsForDerivationTime:(double)ms
+                          passwordLength:(size_t)passwordLength
                               saltLength:(size_t)saltLength
                              ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
                         derivedKeyLength:(size_t)keyLength{
@@ -153,23 +194,18 @@
     int result;
     double derivationTimeMilliseconds = ms;
     
-    // check to default if needed (1000 milliseconds = 1 second)
-    if (ms == 0.0 || ms > (double)UINT32_MAX) {
-        derivationTimeMilliseconds = 1000.0;
-    }
-    
     if (saltLength == 0) {
         return 0;
     }
     
-    // key derivation calculation
-    result = (int) CCCalibratePBKDF(kCCPBKDF2,
-                                    8,
-                                    saltLength,
-                                    ccAlgorithm,
-                                    keyLength,
-                                    (uint32_t) derivationTimeMilliseconds
-                                    );
+    // key derivation round calculation
+    result = (int)CCCalibratePBKDF(kCCPBKDF2,
+                                   passwordLength,
+                                   saltLength,
+                                   ccAlgorithm,
+                                   keyLength,
+                                   (uint32_t)derivationTimeMilliseconds
+                                   );
     
     return (NSUInteger)result;
 }
@@ -190,6 +226,7 @@
                                        key:key
                                    context:kCCEncrypt
                                       mode:kCCModeCTR
+                                 algorithm:kCCAlgorithmAES
                                    padding:&padding
                                         iv:iv];
 
@@ -208,12 +245,12 @@
                                        key:key
                                    context:kCCDecrypt
                                       mode:kCCModeCTR
+                                 algorithm:kCCAlgorithmAES
                                    padding:&padding
                                         iv:iv];
     
     return decryptedData;
 }
-
 /**  ------------------------------------------------------------
  //  Encryption with HMAC (Authenticated)
  //  ------------------------------------------------------------
@@ -232,8 +269,15 @@
     }
     
     // encrypt
-    NSData *encryptedData = [self encrypt:data key:key iv:iv];
-    
+    CCOptions padding = 0;
+    NSData *encryptedData = [self doCipher:data
+                                       key:key
+                                   context:kCCEncrypt
+                                      mode:kCCModeCTR
+                                 algorithm:kCCAlgorithmAES
+                                   padding:&padding
+                                        iv:iv];
+
     if (encryptedData == nil) {
         return nil;
     }
@@ -243,7 +287,7 @@
     NSMutableData *Ki = [[NSMutableData alloc] initWithData:iv];
     [Ki appendData:[[self sha256:key] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
     
-    NSData *digest = [self HMAC:[self sha256:encryptedData]
+    NSData *digest = [self hmac:[self sha256:encryptedData]
                             key:Ki
                           nbits:nbits];
     
@@ -253,35 +297,51 @@
     
     return mutableData;
 }
-+ (NSData *)decryptWithMAC:(NSData *)data
-                       key:(NSData *)key
-                        iv:(NSData *)iv {
+#pragma mark - CHECK-MAC-THEN-DECRYPT
++ (NSData * _Nullable)decryptWithMAC:(NSData *)data
+                              intKey:(NSData *)Ky
+                              encKey:(NSData *)Kx{
     
-    if (data == nil || key == nil || iv == nil) {
+    // lengths of bytes to parse out
+    NSInteger key_length = Kx.length;
+    NSInteger param_length = kAES256_IV_LENGTH + key_length;
+    
+    if (data.length <= param_length) {
         return nil;
     }
     
-    NSInteger len = key.length;
-    NSInteger nbits = len * 8;
-
-    NSData *mac = [data subdataWithRange:NSMakeRange(0, len)];
-    NSData *encryptedData = [data subdataWithRange:NSMakeRange(len, data.length - len)];
+    // parse iv, hmac, and encrypted blob
+    NSData *iv = [data subdataWithRange:NSMakeRange(0, kAES256_IV_LENGTH)];
+    NSData *hmac = [data subdataWithRange:NSMakeRange(kAES256_IV_LENGTH, key_length)];
+    NSData *blob = [data subdataWithRange:NSMakeRange(param_length, data.length - param_length)];
     
-    NSMutableData *Ki = [[NSMutableData alloc] initWithData:iv];
-    [Ki appendData:[[self sha256:key] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
+    // form integrity key
+    NSMutableData *macKey = [[NSMutableData alloc] initWithData:Ky];
+    [macKey appendData:iv];
     
-    NSData *digestToCheck = [self HMAC:[self sha256:encryptedData]
-                                   key:Ki
-                                 nbits:nbits];
-
-    // integrity check
-    if ([digestToCheck isEqualToData:mac]) {
-        NSData *decryptedData = [self decrypt:encryptedData key:key iv:iv];
-        return decryptedData;
+    // generate HMAC
+    NSData *digest = [Crypto hmac:[Crypto sha256:blob]
+                              key:[Crypto sha256:macKey]
+                            nbits:(key_length * 8)];
+    
+    // check the HMAC and if integrity fails we should not trust the underlying data
+    if (![digest isEqualToData:hmac]) {
+        return nil;
     }
     
-    return nil;
+    // decrypt data
+    CCOptions pad = 0;
+    NSData *decryptedData = [Crypto doCipher:blob
+                                         key:Kx
+                                     context:kCCDecrypt
+                                        mode:kCCModeCTR
+                                   algorithm:kCCAlgorithmAES
+                                     padding:&pad
+                                          iv:iv];
+    
+    return decryptedData;
 }
+
 
 + (NSData *)getIV:(NSInteger)nbytes{
     return [[Crypto sha256:[self generateRandomCrytoBytes:nbytes]] subdataWithRange:NSMakeRange(0, nbytes)];
@@ -297,18 +357,21 @@
  //  - CTR is used if you want good parallelization (ie. speed), instead of CBC/OFB/CFB.
  //  ------------------------------------------------------------
  */
+#pragma mark - SYMMETRIC ENCRYPTION
 + (NSData *)doCipher:(NSData *)plainText
                  key:(NSData *)key
              context:(CCOperation)encryptOrDecrypt
                 mode:(CCMode)mode
+           algorithm:(CCAlgorithm)algo
              padding:(CCOptions *)padding
-                  iv:(NSData *)iv {
+                  iv:(NSData *)iv{
     
-    if ((plainText != nil) && (key != nil)) {
+    if ((plainText != NULL) && (key != NULL))
+    {
         CCCryptorStatus ccStatus = kCCSuccess;
-        CCCryptorRef cryptor = nil;
+        CCCryptorRef cryptor = NULL;
         NSData *data = nil;
-        uint8_t *bufferPtr = nil;
+        uint8_t *bufferPtr = NULL;
         size_t bufferPtrSize = 0;
         size_t remainingBytes = 0;
         size_t movedBytes = 0;
@@ -325,29 +388,38 @@
                 } else {
                     *padding = kCCOptionPKCS7Padding;
                 }
+            } else if (mode == kCCModeECB) {
+                if ((plainTextBufferSize % kCCBlockSizeAES128) == 0) {
+                    *padding = 0x0000;
+                }
             }
         }
         
-        // Initialization vector, create one if nil
-        if (iv == nil) {
-            iv = [self generateRandomCrytoBytes:kCCBlockSizeAES128];
+        // Initialization vector
+        if (iv == nil && mode != kCCModeECB) {
+            iv = [self getIV:kCCBlockSizeAES128];
         }
         
         switch (mode) {
             case kCCModeECB:
-                ccStatus = CCCryptorCreate(encryptOrDecrypt,
-                                           kCCAlgorithmAES,
-                                           *padding,
-                                           (const void *)[key bytes],
-                                           kCCKeySizeAES256,
-                                           (__bridge const void *)iv,
-                                           &cryptor
-                                           );
+                ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
+                                                   kCCModeECB,
+                                                   algo,
+                                                   *padding,
+                                                   iv.bytes,
+                                                   key.bytes,
+                                                   key.length,
+                                                   NULL,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   &cryptor
+                                                   );
                 break;
             case kCCModeCTR:
                 ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
                                                    kCCModeCTR,
-                                                   kCCAlgorithmAES,
+                                                   algo,
                                                    *padding,
                                                    iv.bytes,
                                                    key.bytes,
@@ -360,9 +432,10 @@
                                                    );
                 break;
             case kCCModeCBC:
+                // needs iv
                 ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
                                                    kCCModeCBC,
-                                                   kCCAlgorithmAES,
+                                                   algo,
                                                    *padding,
                                                    iv.bytes,
                                                    key.bytes,
@@ -375,9 +448,26 @@
                                                    );
                 break;
             case kCCModeCFB:
+                // needs iv
                 ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
                                                    kCCModeCFB,
-                                                   kCCAlgorithmAES,
+                                                   algo,
+                                                   *padding,
+                                                   iv.bytes,
+                                                   key.bytes,
+                                                   key.length,
+                                                   NULL,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   &cryptor
+                                                   );
+                break;
+            case kCCModeOFB:
+                // needs iv
+                ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
+                                                   kCCModeOFB,
+                                                   algo,
                                                    *padding,
                                                    iv.bytes,
                                                    key.bytes,
@@ -390,46 +480,53 @@
                                                    );
                 break;
             default:
-                ccStatus = CCCryptorCreate(encryptOrDecrypt,
-                                           kCCAlgorithmAES,
-                                           *padding,
-                                           (const void *)[key bytes],
-                                           kCCKeySizeAES256,
-                                           (__bridge const void *)iv,
-                                           &cryptor
-                                           );
+                ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
+                                                   kCCModeCTR,
+                                                   algo,
+                                                   *padding,
+                                                   iv.bytes,
+                                                   key.bytes,
+                                                   key.length,
+                                                   NULL,
+                                                   0,
+                                                   0,
+                                                   kCCModeOptionCTR_BE,
+                                                   &cryptor
+                                                   );
                 break;
         }
         
-        if (ccStatus == kCCSuccess) {
-            // Calculate byte block alignment for all calls through to and including final.
+        if (ccStatus == kCCSuccess)
+        {
+            // calculate byte block alignment for all calls through to and including final.
             bufferPtrSize = CCCryptorGetOutputLength(cryptor, plainTextBufferSize, true);
             
-            // Allocate buffer.
-            bufferPtr = malloc(bufferPtrSize * sizeof(uint8_t) );
-            // Zero out buffer.
+            // allocate buffer.
+            bufferPtr = malloc(bufferPtrSize * sizeof(uint8_t));
+            // zero out buffer.
             memset((void *)bufferPtr, 0x0, bufferPtrSize);
             
-            // Initialize some necessary book keeping.
+            // initialize some necessary book keeping.
             ptr = bufferPtr;
             remainingBytes = bufferPtrSize;
             
             // perform the encryption or decryption.
             ccStatus = CCCryptorUpdate(cryptor,
-                                       (const void *)[plainText bytes],
+                                       (const void *) [plainText bytes],
                                        plainTextBufferSize,
                                        ptr,
                                        remainingBytes,
                                        &movedBytes
                                        );
             
-            if (ccStatus == kCCSuccess) {
-                // Handle bytes
+            if (ccStatus == kCCSuccess)
+            {
+                // handle bytes
                 ptr += movedBytes;
                 remainingBytes -= movedBytes;
                 totalBytesWritten += movedBytes;
                 
-                // Finalize everything to the output buffer.
+                // finalize everything to the output buffer.
                 ccStatus = CCCryptorFinal(cryptor,
                                           ptr,
                                           remainingBytes,
@@ -440,12 +537,13 @@
                 
                 if (cryptor) {
                     (void) CCCryptorRelease(cryptor);
-                    cryptor = nil;
+                    cryptor = NULL;
                 }
                 
-                if (ccStatus == kCCSuccess) {
+                if (ccStatus == kCCSuccess)
+                {
                     data = [NSData dataWithBytes:(const void *)bufferPtr length:(NSUInteger)totalBytesWritten];
-
+                    
                     if (bufferPtr) {
                         free(bufferPtr);
                     }
@@ -553,7 +651,7 @@
     
     // init vars
     NSString *zeros = @"00000000000000000000000000000000";
-    NSData *hash = [DataFormatter hexStringToData:@"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"];
+    NSData *hash = nil;
     
     // range of leading 0's to find
     NSRange range = NSMakeRange(0, diff);
@@ -567,7 +665,7 @@
         @autoreleasepool {
             NSMutableData *input = [[NSMutableData alloc] initWithData:challenge];
             // hash challenge with concatenated nonce
-            [input appendData:[DataFormatter hexStringToData:[DataFormatter hexFromInt:nonce]]];
+            [input appendData:[DataFormatter hexStringToData:[DataFormatter hexFromInt:nonce prefix:YES]]];
             hash = [self sha256:input];
             
             // check if valid

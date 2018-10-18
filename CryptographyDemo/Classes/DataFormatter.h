@@ -9,7 +9,7 @@
 
 // Hex/Binary/Int
 + (NSString*)hexToBinary:(NSString*)hexString;
-+ (NSString *)hexFromInt:(NSInteger)val;
++ (NSString *)hexFromInt:(NSInteger)val prefix:(BOOL)prefix;
 + (int)hexDataToInt:(NSData *)hex;
 
 // Binary String to Integer

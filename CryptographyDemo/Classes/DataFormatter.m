@@ -5,14 +5,12 @@
 
 + (NSString *)hexDataToString:(NSData *)hexData {
     
-    NSString *hex = [[[[NSString stringWithFormat:@"%@",hexData]
-                       stringByReplacingOccurrencesOfString:@" " withString:@""]
-                      stringByReplacingOccurrencesOfString:@"<" withString:@""]
-                     stringByReplacingOccurrencesOfString:@">" withString:@""];
-    return hex;
+    NSString *hex = [NSString stringWithFormat:@"%@",hexData];
+    hex = [[[hex stringByReplacingOccurrencesOfString:@" " withString:@""] stringByReplacingOccurrencesOfString:@"<" withString:@""] stringByReplacingOccurrencesOfString:@">" withString:@""];
+    
+    return hex.lowercaseString;
 }
-
-+ (NSData *)hexStringToData:(NSString *)str {
++ (NSData * _Nullable)hexStringToData:(NSString *)str {
     
     if (str.length < 2) {
         return nil;
@@ -37,37 +35,36 @@
     return commandToSend;
 }
 
-+ (NSString*)hexToBinary:(NSString*)hexString {
++ (NSString *)hexToBinary:(NSString*)hexString {
     
-    NSMutableString *str = [NSMutableString string];
+    NSMutableString *retnString = [NSMutableString string];
     
     for (int i = 0; i < [hexString length]; i++) {
         char c = [[hexString lowercaseString] characterAtIndex:i];
         switch (c) {
-            case '0': [str appendString:@"0000"]; break;
-            case '1': [str appendString:@"0001"]; break;
-            case '2': [str appendString:@"0010"]; break;
-            case '3': [str appendString:@"0011"]; break;
-            case '4': [str appendString:@"0100"]; break;
-            case '5': [str appendString:@"0101"]; break;
-            case '6': [str appendString:@"0110"]; break;
-            case '7': [str appendString:@"0111"]; break;
-            case '8': [str appendString:@"1000"]; break;
-            case '9': [str appendString:@"1001"]; break;
-            case 'a': [str appendString:@"1010"]; break;
-            case 'b': [str appendString:@"1011"]; break;
-            case 'c': [str appendString:@"1100"]; break;
-            case 'd': [str appendString:@"1101"]; break;
-            case 'e': [str appendString:@"1110"]; break;
-            case 'f': [str appendString:@"1111"]; break;
+            case '0': [retnString appendString:@"0000"]; break;
+            case '1': [retnString appendString:@"0001"]; break;
+            case '2': [retnString appendString:@"0010"]; break;
+            case '3': [retnString appendString:@"0011"]; break;
+            case '4': [retnString appendString:@"0100"]; break;
+            case '5': [retnString appendString:@"0101"]; break;
+            case '6': [retnString appendString:@"0110"]; break;
+            case '7': [retnString appendString:@"0111"]; break;
+            case '8': [retnString appendString:@"1000"]; break;
+            case '9': [retnString appendString:@"1001"]; break;
+            case 'a': [retnString appendString:@"1010"]; break;
+            case 'b': [retnString appendString:@"1011"]; break;
+            case 'c': [retnString appendString:@"1100"]; break;
+            case 'd': [retnString appendString:@"1101"]; break;
+            case 'e': [retnString appendString:@"1110"]; break;
+            case 'f': [retnString appendString:@"1111"]; break;
             default : break;
         }
     }
     
-    return str;
+    return retnString;
 }
-
-+ (int) binaryStringToInt:(NSString *) binaryString {
++ (int)binaryStringToInt:(NSString *) binaryString {
     
     unichar aChar;
     int value = 0;
@@ -86,16 +83,16 @@
     return value;
 }
 
-+ (NSString *)hexFromInt:(NSInteger)val {
++ (NSString *)hexFromInt:(NSInteger)val prefix:(BOOL)prefix{
     
-    NSString *str = [NSString stringWithFormat:@"%X", (unsigned int)val];
-    if (str.length % 2 != 0 || str.length < 2) {
-        str = [NSString stringWithFormat:@"0%@", str];
+    NSString *rtn = [NSString stringWithFormat:@"%X", (unsigned int)val];
+    
+    if (rtn.length % 2 != 0 || rtn.length < 2) {
+        rtn = [NSString stringWithFormat:@"0%@", rtn];
     }
     
-    return [NSString stringWithFormat:@"0x%@", str];
+    return [NSString stringWithFormat:@"%@%@", (prefix ? @"0x":@""), rtn.lowercaseString];
 }
-
 + (int)hexDataToInt:(NSData *)hex{
     return [self binaryStringToInt:[self hexToBinary:[self hexDataToString:hex]]];
 }
@@ -109,11 +106,46 @@
     
     for (NSInteger i = 0; i < nbuckets; i++) {
         NSString *b = [[binaryString lowercaseString] substringWithRange:NSMakeRange(i*4, 4)];
-        [str appendString:[self binaryToHex:b]];
+        NSString *hex;
+        if ([b isEqualToString:@"0000"]) {
+            hex = @"0";
+        } else if ([b isEqualToString:@"0001"]) {
+            hex = @"1";
+        } else if ([b isEqualToString:@"0010"]) {
+            hex = @"2";
+        } else if ([b isEqualToString:@"0011"]) {
+            hex = @"3";
+        } else if ([b isEqualToString:@"0100"]) {
+            hex = @"4";
+        } else if ([b isEqualToString:@"0101"]) {
+            hex = @"5";
+        } else if ([b isEqualToString:@"0110"]) {
+            hex = @"6";
+        } else if ([b isEqualToString:@"0111"]) {
+            hex = @"7";
+        } else if ([b isEqualToString:@"1000"]) {
+            hex = @"8";
+        } else if ([b isEqualToString:@"1001"]) {
+            hex = @"9";
+        } else if ([b isEqualToString:@"1010"]) {
+            hex = @"a";
+        } else if ([b isEqualToString:@"1011"]) {
+            hex = @"b";
+        } else if ([b isEqualToString:@"1100"]) {
+            hex = @"c";
+        } else if ([b isEqualToString:@"1101"]) {
+            hex = @"d";
+        } else if ([b isEqualToString:@"1110"]) {
+            hex = @"e";
+        } else if ([b isEqualToString:@"1111"]) {
+            hex = @"f";
+        } else {
+            hex = @"0";
+        }
+        [str appendString:hex];
     }
     
     return str;
 }
-
 
 @end
