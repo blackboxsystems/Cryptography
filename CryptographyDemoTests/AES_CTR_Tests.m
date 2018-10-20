@@ -76,9 +76,6 @@
 // access control on certain fields...
 - (void)test_AES_CTR_DataCorruption {
     
-    /*
-     Deriving, Encrypting and Packing
-     */
     NSString *secret = @"describe omit kite parent ask type noodle casino allow bench flavor amazing";
     NSData *msg = [secret dataUsingEncoding:NSUTF8StringEncoding];
     NSData *key = [DataFormatter hexStringToData:@"01d4a0c5 aac82337 beda6d3b 3958d78b 944c68d9 a0700b74 8c2419d2 3fe7f4f7 efc17222 e94603ee e6964db5 f44d4c41 b4bf182a 7a7ef43e 9d4efa04 a7669026"];
@@ -89,15 +86,15 @@
     // encrypt
     NSMutableData *encryptedData = [[NSMutableData alloc] initWithData:[Crypto encrypt:msg key:Kx iv:iv]];
     
-    // corrupted the encrypted data
+    // corrupt the encrypted data
     NSInteger ncorrupt = 2;
     NSRange corruptRange = NSMakeRange(encryptedData.length-ncorrupt, ncorrupt);
     NSData *corruptData = [DataFormatter hexStringToData:@"428c"];
     
-    // apply corrupt a portion of encrypted bytes
+    // apply corrupt portion of encrypted bytes
     [encryptedData replaceBytesInRange:corruptRange withBytes:corruptData.bytes];
     
-    // decrypt corrupted data
+    // decrypt corrupted data, should return all valid data except within the corrupted range
     CCOptions pad = 0;
     NSData *decryptedData = [Crypto doCipher:encryptedData
                                          key:Kx
