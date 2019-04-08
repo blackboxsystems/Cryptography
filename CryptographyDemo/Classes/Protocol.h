@@ -18,11 +18,14 @@ typedef NS_ENUM(NSInteger, BBEncryptionMode) {
 };
 
 // key derivation mode
-typedef NS_ENUM(NSInteger, BBKeyDerivationMode) {
-    BBDeriveKEY = 0,
-    BBDeriveAES = 1,
-    BBDeriveOTHER
+typedef NS_ENUM(NSInteger, BBKDFMode) {
+    unknown = 0,
+    masterKey,
+    enclaveKey,
+    pincodeKey,
+    aesKey,
 };
+
 
 #pragma mark - JSON serializer
 + (NSString * _Nullable)jsonStringWithPrettyPrint:(id)object pretty:(BOOL)prettyPrint;

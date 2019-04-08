@@ -1,5 +1,6 @@
 #import <XCTest/XCTest.h>
 #import "Crypto.h"
+#import "Mnemonic.h"
 
 // key derivation rounds
 static const NSInteger kKDFRoundsTEST = 1024;
@@ -22,7 +23,6 @@ static const NSInteger kKDFRoundsTEST = 1024;
     // Put teardown code here. This method is called after the invocation of each test method in the class.
     [super tearDown];
 }
-
 
 - (void)test_HASH_SHA {
     
@@ -179,28 +179,28 @@ static const NSInteger kKDFRoundsTEST = 1024;
     
     NSData *key = [Crypto deriveKey:password
                                salt:kSalt224
-                               mode:2
+                               mode:unknown
                              rounds:kKDFRoundsTEST];
     XCTAssertEqualObjects([DataFormatter hexDataToString:key],
                           @"786eb4720a58b3fc1f46e174e1ffc96791273a7e8d26a68e1208e83b");
     
     key = [Crypto deriveKey:password
                        salt:kSalt256
-                       mode:2
+                       mode:unknown
                      rounds:kKDFRoundsTEST];
     XCTAssertEqualObjects([DataFormatter hexDataToString:key],
                           @"23dc60632245ee72211d7851f7dcd010cc5b6428c34518689b564662356cb374");
     
     key = [Crypto deriveKey:password
                        salt:kSalt384
-                       mode:2
+                       mode:unknown
                      rounds:kKDFRoundsTEST];
     XCTAssertEqualObjects([DataFormatter hexDataToString:key],
                           @"7a9448f51adf6ec40ca6d69d40a8205bee760e32aa0880c2b48bd05f8517f54a0e073fab6f9a4579feb9386e9a68330b");
     
     key = [Crypto deriveKey:password
                        salt:kSalt512
-                       mode:0
+                       mode:masterKey
                      rounds:kKDFRoundsTEST];
     XCTAssertEqualObjects([DataFormatter hexDataToString:key],
                           @"866749ea6c2c28e0e4bfebedf9a48b3d619a08536917c33a518e82767b951e06d8fa7558190c04f32e5b3cf1eff9b21ba5604e1e397888603c49790da8d22489");

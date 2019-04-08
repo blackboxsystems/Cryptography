@@ -5,13 +5,15 @@
 NS_ENUM(NSInteger, CCSeedWords) {
     kSeedWords12 = 12,
     kSeedWords18 = 18,
-    kSeedWords24 = 24
+    kSeedWords24 = 24,
+    kSeedWords48 = 48
 };
 
 NS_ENUM(NSInteger, CCSeedEntropy) {
     kSeedBytes16 = 16,
     kSeedBytes24 = 24,
-    kSeedBytes32 = 32
+    kSeedBytes32 = 32,
+    kSeedBytes64 = 64
 };
 
 
@@ -50,7 +52,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
         [indexes addObject:[NSString stringWithFormat:@"%i",[DataFormatter binaryStringToInt:mapping[i]]]];
     }
     
-    NSArray *dictionary = [self getDictionary];
+    NSArray *dictionary = [self getBIP32Dictionary];
     NSMutableString *phrase = [[NSMutableString alloc] init];
     NSMutableArray *usedWords = [[NSMutableArray alloc] initWithCapacity:Nwords];
     
@@ -102,7 +104,8 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
         return nil;
     }
     
-    NSArray *dictionary = [self getDictionary];
+    NSArray *dictionary = [self getBIP32Dictionary];
+    
     NSMutableArray *wordIndexes = [[NSMutableArray alloc] initWithCapacity:nwords];
     NSInteger index = 0;
     for (NSInteger i = 0; i < nwords; i++)
@@ -135,15 +138,21 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     NSData *entropy_data = [DataFormatter hexStringToData:entropy];
     NSData *checksum = nil;
     NSInteger nbytes = kSeedBytes32;
+    
     if (binaries.length == 132) {
         nbytes = kSeedBytes16;
     } else if (binaries.length == 198) {
         nbytes = kSeedBytes24;
     } else if (binaries.length == 264) {
         nbytes = kSeedBytes32;
+    } else {
+        nbytes = kSeedBytes64;
     }
+    
     entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, nbytes)];
-    checksum = [[Crypto sha256:entropy_data] subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes32 ? 2 : 1))];
+    checksum = [[Crypto sha256:entropy_data] subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes64 ?
+                                                                                     4 : (nbytes == kSeedBytes32 ?
+                                                                                          2 : 1)))];
     
     NSData *hash = [Crypto sha:entropy_data nbits:nbytes*8];
     NSData *checksum_hash = [hash subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes32 ? 2 : 1))];
@@ -155,7 +164,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     return nil;
 }
 
-+ (NSArray *)getDictionary {
++ (NSArray *)getBIP32Dictionary{
     
     // get file data
     NSString *filePath = [[NSBundle mainBundle] pathForResource:@"seed_dictionary" ofType:@"txt"];

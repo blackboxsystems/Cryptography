@@ -13,7 +13,7 @@
 + (NSData *)entropyFromMemnonic:(NSString *)mnemonic;
 
 // read seed_dictionary.txt and return data
-+ (NSArray *)getDictionary;
++ (NSArray *)getBIP32Dictionary;
 
 + (NSInteger)entropySize:(NSInteger)words;
 + (NSInteger)wordSize:(NSInteger)data;

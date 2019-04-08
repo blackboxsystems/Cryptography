@@ -124,12 +124,9 @@
 #pragma mark - Password-Based Key Derivation (PBKDF2)
 + (NSData *)deriveKey:(NSString *)password
                  salt:(NSData *)salt
-                 mode:(BBKeyDerivationMode)mode
+                 mode:(BBKDFMode)mode
                rounds:(NSInteger)rounds{
-    
-    NSMutableData *derivedKey = [NSMutableData dataWithLength:(mode == BBDeriveKEY ? 64 :
-                                                               (mode == BBDeriveAES ? 32 : salt.length))];
-    
+        
     CCPseudoRandomAlgorithm prf = (salt.length == 28 ? kCCPRFHmacAlgSHA224 :
                                    (salt.length == 32 ? kCCPRFHmacAlgSHA256 :
                                     (salt.length == 36 ? kCCPRFHmacAlgSHA384 : kCCPRFHmacAlgSHA512)));
@@ -137,10 +134,12 @@
         return nil;
     }
     
+    NSMutableData *derivedKey;
     int result = 0;
     switch (mode) {
             // passphrase derived key
-        case BBDeriveKEY:
+        case masterKey:
+            derivedKey = [NSMutableData dataWithLength:kHMAC_SHA512_SALT_LENGTH];
             result = CCKeyDerivationPBKDF(kCCPBKDF2,                // algorithm
                                           password.UTF8String,      // password
                                           password.length,          // password length
@@ -153,7 +152,9 @@
             break;
             
             // secure enclave device biometry key
-        case BBDeriveAES:
+        case enclaveKey:
+        case aesKey:
+            derivedKey = [NSMutableData dataWithLength:kHMAC_SHA256_SALT_LENGTH];
             result = CCKeyDerivationPBKDF(kCCPBKDF2,
                                           password.UTF8String,
                                           password.length,
@@ -165,6 +166,7 @@
                                           derivedKey.length);
             break;
         default:
+            derivedKey = [NSMutableData dataWithLength:salt.length];
             result = CCKeyDerivationPBKDF(kCCPBKDF2,
                                           password.UTF8String,
                                           password.length,
@@ -185,26 +187,24 @@
 }
 
 // calculate number of rounds for time of PBKDF2 derivation
-+ (NSUInteger)KDFRoundsForDerivationTime:(double)ms
++ (NSUInteger)KDFRoundsForDerivationTime:(double)milliseconds
                           passwordLength:(size_t)passwordLength
                               saltLength:(size_t)saltLength
                              ccAlgorithm:(CCPseudoRandomAlgorithm)ccAlgorithm
                         derivedKeyLength:(size_t)keyLength{
-    
-    int result;
-    double derivationTimeMilliseconds = ms;
     
     if (saltLength == 0) {
         return 0;
     }
     
     // key derivation round calculation
+    int result;
     result = (int)CCCalibratePBKDF(kCCPBKDF2,
                                    passwordLength,
                                    saltLength,
                                    ccAlgorithm,
                                    keyLength,
-                                   (uint32_t)derivationTimeMilliseconds
+                                   (uint32_t)milliseconds
                                    );
     
     return (NSUInteger)result;
@@ -216,11 +216,11 @@
 + (NSData *)encrypt:(NSData *)data
                 key:(NSData *)key
                  iv:(NSData *)iv {
-    
+
     if (data == nil || key == nil) {
         return nil;
     }
-    
+
     CCOptions padding = 0;
     NSData *encryptedData = [self doCipher:data
                                        key:key
@@ -248,6 +248,40 @@
                                  algorithm:kCCAlgorithmAES
                                    padding:&padding
                                         iv:iv];
+    
+    return decryptedData;
+}
++ (NSData *)encryptAES_CTR:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv{
+    
+    if (key == nil || data == nil || iv == nil) {
+        return nil;
+    }
+    CCOptions pad = ccNoPadding;
+    NSData *encryptedData = [self doCipher:data
+                                       key:key
+                                   context:kCCEncrypt
+                                      mode:kCCModeCTR
+                                 algorithm:kCCAlgorithmAES
+                                   padding:&pad
+                                        iv:iv];
+    
+    return encryptedData;
+}
++ (NSData *)decryptAES_CTR:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv{
+    
+    // decrypt data
+    CCOptions pad = ccNoPadding;
+    NSData *decryptedData = [Crypto doCipher:data
+                                         key:key
+                                     context:kCCDecrypt
+                                        mode:kCCModeCTR
+                                   algorithm:kCCAlgorithmAES
+                                     padding:&pad
+                                          iv:iv];
     
     return decryptedData;
 }
@@ -304,15 +338,15 @@
     
     // lengths of bytes to parse out
     NSInteger key_length = Kx.length;
-    NSInteger param_length = kAES256_IV_LENGTH + key_length;
+    NSInteger param_length = kAES256_IV_LENGTH_BYTES + key_length;
     
     if (data.length <= param_length) {
         return nil;
     }
     
     // parse iv, hmac, and encrypted blob
-    NSData *iv = [data subdataWithRange:NSMakeRange(0, kAES256_IV_LENGTH)];
-    NSData *hmac = [data subdataWithRange:NSMakeRange(kAES256_IV_LENGTH, key_length)];
+    NSData *iv = [data subdataWithRange:NSMakeRange(0, kAES256_IV_LENGTH_BYTES)];
+    NSData *hmac = [data subdataWithRange:NSMakeRange(kAES256_IV_LENGTH_BYTES, key_length)];
     NSData *blob = [data subdataWithRange:NSMakeRange(param_length, data.length - param_length)];
     
     // form integrity key
@@ -357,7 +391,7 @@
  //  - CTR is used if you want good parallelization (ie. speed), instead of CBC/OFB/CFB.
  //  ------------------------------------------------------------
  */
-#pragma mark - SYMMETRIC ENCRYPTION
+#pragma mark - SYMMETRIC ENCRYPTION CIPHER
 + (NSData *)doCipher:(NSData *)plainText
                  key:(NSData *)key
              context:(CCOperation)encryptOrDecrypt
@@ -417,6 +451,13 @@
                                                    );
                 break;
             case kCCModeCTR:
+                // parallelization and diffusion for large data,
+                // no iv can be reused with the same key encryption
+                // key for subsequent messages
+                *padding = ccNoPadding;
+                
+                // apperently numCipherRounds is handled by default (cipher block rounds in CTR), using 0 as default (should be 8/12).
+                int numCipherRounds = 0;
                 ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
                                                    kCCModeCTR,
                                                    algo,
@@ -426,7 +467,7 @@
                                                    key.length,
                                                    NULL,
                                                    0,
-                                                   0,
+                                                   numCipherRounds,
                                                    kCCModeOptionCTR_BE,
                                                    &cryptor
                                                    );
@@ -480,19 +521,15 @@
                                                    );
                 break;
             default:
-                ccStatus = CCCryptorCreateWithMode(encryptOrDecrypt,
-                                                   kCCModeCTR,
-                                                   algo,
-                                                   *padding,
-                                                   iv.bytes,
-                                                   key.bytes,
-                                                   key.length,
-                                                   NULL,
-                                                   0,
-                                                   0,
-                                                   kCCModeOptionCTR_BE,
-                                                   &cryptor
-                                                   );
+                // ECB Mode - lacks diffusion for large data, no iv needed
+                ccStatus = CCCryptorCreate(encryptOrDecrypt,
+                                           kCCAlgorithmAES,
+                                           *padding,
+                                           (const void *)[key bytes],
+                                           kCCKeySizeAES256,
+                                           (__bridge const void *)iv,
+                                           &cryptor
+                                           );
                 break;
         }
         
@@ -512,7 +549,7 @@
             
             // perform the encryption or decryption.
             ccStatus = CCCryptorUpdate(cryptor,
-                                       (const void *) [plainText bytes],
+                                       (const void *)[plainText bytes],
                                        plainTextBufferSize,
                                        ptr,
                                        remainingBytes,
@@ -542,7 +579,8 @@
                 
                 if (ccStatus == kCCSuccess)
                 {
-                    data = [NSData dataWithBytes:(const void *)bufferPtr length:(NSUInteger)totalBytesWritten];
+                    data = [NSData dataWithBytes:(const void *)bufferPtr
+                                          length:(NSUInteger)totalBytesWritten];
                     
                     if (bufferPtr) {
                         free(bufferPtr);
@@ -643,43 +681,41 @@
  //  Example Proof of Work Algorithm
  //  ------------------------------------------------------------
  */
-+ (NSDictionary *)proofOfWork:(NSData *)challenge difficulty:(NSInteger)diff {
+#pragma mark - Proof-of-Work Example
++ (NSDictionary *)proofOfWork:(NSData *)challenge
+                   difficulty:(NSInteger)diff{
     
-    if (challenge == nil || diff == 0) {
-        return nil;
-    }
-    
-    // init vars
     NSString *zeros = @"00000000000000000000000000000000";
     NSData *hash = nil;
     
-    // range of leading 0's to find
     NSRange range = NSMakeRange(0, diff);
     zeros = [zeros substringWithRange:range];
     
     NSInteger nonce = 0;
+    NSInteger nonce_limit = (NSInteger)pow(2.0, 32.0) - 1;
     BOOL proceed = YES;
-    
-    // do work
-    while (proceed) {
-        @autoreleasepool {
+
+    //    NSDate *startDate = [NSDate dateWithTimeIntervalSinceNow:0];
+    while (proceed)
+    {
+        @autoreleasepool
+        {
             NSMutableData *input = [[NSMutableData alloc] initWithData:challenge];
-            // hash challenge with concatenated nonce
-            [input appendData:[DataFormatter hexStringToData:[DataFormatter hexFromInt:nonce prefix:YES]]];
+            [input appendData:[DataFormatter hexStringToData:[DataFormatter hexFromInt:nonce prefix:NO]]];
             hash = [self sha256:input];
             
-            // check if valid
-            if ([[DataFormatter hexDataToString:[hash subdataWithRange:range]] substringToIndex:diff] == zeros) {
-                // return dictionary of valid proof parameters
-                NSMutableDictionary *dict = [[NSMutableDictionary alloc] initWithCapacity:2];
+            // check proof
+            if ([[[DataFormatter hexDataToString:[hash subdataWithRange:range]] substringToIndex:diff] isEqualToString:zeros])
+            {
+                NSMutableDictionary *dict = [[NSMutableDictionary alloc] initWithCapacity:3];
                 [dict setObject:hash forKey:@"proof"];
+                [dict setObject:challenge forKey:@"challenge"];
                 [dict setObject:[NSNumber numberWithInteger:nonce] forKey:@"nonce"];
-
                 return dict;
             }
-            // check overflow
-            if (nonce++ >= kMaxNonce) {
+            if (nonce++ >= nonce_limit) {
                 proceed = NO;
+                return nil;
             }
         }
     }

@@ -9,10 +9,13 @@
 // key derivation rounds
 #define kPBKDFRoundsAES 4096
 #define kMaxNonce 4294967295
-#define kAES256_IV_LENGTH 16
-#define kAES256_KEY_LENGTH 32
-#define kSHAHMAC256_SALT_LENGTH 32
-#define kSHAHMAC512_SALT_LENGTH 64
+
+// key length bytes
+#define kAES256_IV_LENGTH_BYTES 16      // 128 bit block size
+#define kAES256_KEY_LENGTH_BYTES 32     // output size in bytes for 256 bit symmetric key
+
+#define kHMAC_SHA256_SALT_LENGTH 32     // output size in bytes HMAC_SHA256
+#define kHMAC_SHA512_SALT_LENGTH 64     // output size in bytes HMAC_SHA512
 
 #define kKDFRoundsDigest256 924137
 #define kKDFRoundsDigest512 656621
@@ -36,7 +39,7 @@
 // key derivation
 + (NSData *)deriveKey:(NSString *)password
                  salt:(NSData *)salt
-                 mode:(BBKeyDerivationMode)m
+                 mode:(BBKDFMode)m
                rounds:(NSInteger)rounds;
 
 #pragma mark - KEY DERIVATION ROUNDS
@@ -48,15 +51,20 @@
 
 + (NSData *)getIV:(NSInteger)nbytes;
 
-// wrapper for encryption
+// wrapper for encryption/decryption
 + (NSData *)encrypt:(NSData *)data
                 key:(NSData *)key
                  iv:(NSData *)iv;
-
-// wrapper for decryption
 + (NSData *)decrypt:(NSData *)data
                 key:(NSData *)key
                  iv:(NSData *)iv;
+
++ (NSData *)encryptAES_CTR:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv;
++ (NSData *)decryptAES_CTR:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv;
 
 // encrypt-then-mac
 + (NSData *)encryptThenMAC:(NSData *)data
@@ -64,9 +72,12 @@
                         iv:(NSData *)iv;
 
 // check mac then decrypt
+//+ (NSData *)decryptWithMAC:(NSData *)data
+//                       key:(NSData *)key
+//                        iv:(NSData *)iv;
 + (NSData *)decryptWithMAC:(NSData *)data
-                       key:(NSData *)key
-                        iv:(NSData *)iv;
+                    intKey:(NSData *)Ky
+                    encKey:(NSData *)Kx;
 
 #pragma mark - SYMMETRIC ENCRYPTION
 + (NSData *)doCipher:(NSData *)plainText
