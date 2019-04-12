@@ -44,27 +44,14 @@
     // split derived key
     NSData *Kx = [key subdataWithRange:NSMakeRange(0, kAES256_KEY_LENGTH_BYTES)];
     NSData *Ky = [key subdataWithRange:NSMakeRange(kAES256_KEY_LENGTH_BYTES, kAES256_KEY_LENGTH_BYTES)];
-    NSData *iv = [DataFormatter hexStringToData:IV_128];
     
-    // encrypt
-    NSData *encryptedData = [Crypto encryptAES_CTR:msg key:Kx iv:iv];
-
-    // key for mac
-    NSMutableData *Kmac = [[NSMutableData alloc] initWithData:[Crypto sha256:Ky]];
-    [Kmac appendData:iv];
-    
-    // compute mac
-    NSData *digest = [Crypto hmac:[Crypto sha256:encryptedData]
-                              key:[Crypto sha256:Kmac]
-                            nbits:(Kx.length * 8)];
-    
-    // format blob
-    NSMutableData *macstream = [[NSMutableData alloc] initWithData:iv];
-    [macstream appendData:digest];
-    [macstream appendData:encryptedData];
+    // encrypt-then-mac
+    NSData *encryptedBlob = [Crypto encryptThenMAC:msg
+                                            intKey:Ky
+                                            encKey:Kx];
     
     // construct protocol data (public params and encrypted blob)
-    NSData *protocol = [Protocol createProtocolWithBlob:macstream
+    NSData *protocol = [Protocol createProtocolWithBlob:encryptedBlob
                                                 kdfMode:masterKey
                                                 encMode:BBEncryptAES
                                                    salt:salt
@@ -85,26 +72,23 @@
     XCTAssertTrue(parsed_version == APP_PROTOCOL_VERSION);
     XCTAssertTrue(parsed_rounds == kdf_rounds);
     XCTAssertEqualObjects(parsed_salt, salt);
-    XCTAssertEqualObjects(parsed_blob, macstream);
+    XCTAssertEqualObjects(parsed_blob, encryptedBlob);
     
     NSData *key2 = [Crypto deriveKey:password
                                 salt:parsed_salt
                                 mode:parsed_kdfmode
                               rounds:parsed_rounds];
-    XCTAssertNotNil(key);
     
-    if (key.length > kAES256_KEY_LENGTH_BYTES) {
-        Kx = [key2 subdataWithRange:NSMakeRange(0, kAES256_KEY_LENGTH_BYTES)];
-        Ky = [key2 subdataWithRange:NSMakeRange(kAES256_KEY_LENGTH_BYTES, kAES256_KEY_LENGTH_BYTES)];
-    } else {
-        Kx = key2;
-        Ky = key2;
-    }
+    XCTAssertEqualObjects(key2, key);
+    
+    Kx = [key2 subdataWithRange:NSMakeRange(0, kAES256_KEY_LENGTH_BYTES)];
+    Ky = [key2 subdataWithRange:NSMakeRange(kAES256_KEY_LENGTH_BYTES, kAES256_KEY_LENGTH_BYTES)];
+    
     XCTAssertNotNil(Kx);
     XCTAssertNotNil(Ky);
     
     NSData *decryptedData = [Crypto decryptWithMAC:parsed_blob
-                                            intKey:[Crypto sha256:Ky]
+                                            intKey:Ky
                                             encKey:Kx];
     
     XCTAssertNotNil(decryptedData);
