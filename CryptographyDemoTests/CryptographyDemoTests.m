@@ -41,6 +41,7 @@
                                mode:masterKey
                              rounds:kdf_rounds];
     
+    // split derived key
     NSData *Kx = [key subdataWithRange:NSMakeRange(0, kAES256_KEY_LENGTH_BYTES)];
     NSData *Ky = [key subdataWithRange:NSMakeRange(kAES256_KEY_LENGTH_BYTES, kAES256_KEY_LENGTH_BYTES)];
     NSData *iv = [DataFormatter hexStringToData:IV_128];
@@ -68,27 +69,27 @@
                                                 encMode:BBEncryptAES
                                                    salt:salt
                                                  rounds:kdf_rounds];
-        
+    
+    // parse, decode, and decrypt to verify
     NSDictionary *parsedProtocol = [Protocol parseBlob:protocol];
     XCTAssertNotNil(parsedProtocol);
     
-    NSInteger kdfmode = [parsedProtocol[PROTOCOL_KDF_MODE_STRING] integerValue];
+    NSInteger parsed_kdfmode = [parsedProtocol[PROTOCOL_KDF_MODE_STRING] integerValue];
     // not needed here but can allow abstraction for other implementations
 //    int encmode = [parsedProtocol[PROTOCOL_ENCRYPTION_MODE_STRING] integerValue];
-    NSInteger rounds = [parsedProtocol[PROTOCOL_ROUNDS_STRING] integerValue];
-    NSInteger version = [parsedProtocol[PROTOCOL_VERSION_STRING] integerValue];
-    NSData *parsed_salt = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_SALT_STRING]];
     NSInteger parsed_rounds = [parsedProtocol[PROTOCOL_ROUNDS_STRING] integerValue];
+    NSInteger parsed_version = [parsedProtocol[PROTOCOL_VERSION_STRING] integerValue];
+    NSData *parsed_salt = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_SALT_STRING]];
     NSData *parsed_blob = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_BLOB_STRING]];
     
-    XCTAssertTrue(version == APP_PROTOCOL_VERSION);
-    XCTAssertTrue(rounds > 0);
-    XCTAssertNotNil(salt);
-    XCTAssertNotNil(encryptedData);
+    XCTAssertTrue(parsed_version == APP_PROTOCOL_VERSION);
+    XCTAssertTrue(parsed_rounds == kdf_rounds);
+    XCTAssertEqualObjects(parsed_salt, salt);
+    XCTAssertEqualObjects(parsed_blob, macstream);
     
     NSData *key2 = [Crypto deriveKey:password
                                 salt:parsed_salt
-                                mode:kdfmode
+                                mode:parsed_kdfmode
                               rounds:parsed_rounds];
     XCTAssertNotNil(key);
     
