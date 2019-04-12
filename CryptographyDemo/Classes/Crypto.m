@@ -126,15 +126,14 @@
                  salt:(NSData *)salt
                  mode:(BBKDFMode)mode
                rounds:(NSInteger)rounds{
-        
-    CCPseudoRandomAlgorithm prf = (salt.length == 28 ? kCCPRFHmacAlgSHA224 :
-                                   (salt.length == 32 ? kCCPRFHmacAlgSHA256 :
-                                    (salt.length == 36 ? kCCPRFHmacAlgSHA384 : kCCPRFHmacAlgSHA512)));
+    
     if (password.length == 0 || rounds == 0) {
         return nil;
     }
     
     NSMutableData *derivedKey;
+    CCPseudoRandomAlgorithm prf;
+    
     int result = 0;
     switch (mode) {
             // passphrase derived key
@@ -166,7 +165,12 @@
                                           derivedKey.length);
             break;
         default:
+            prf = (salt.length == 28 ? kCCPRFHmacAlgSHA224 :
+                   (salt.length == 32 ? kCCPRFHmacAlgSHA256 :
+                    (salt.length == 36 ? kCCPRFHmacAlgSHA384 : kCCPRFHmacAlgSHA512)));
+            
             derivedKey = [NSMutableData dataWithLength:salt.length];
+            
             result = CCKeyDerivationPBKDF(kCCPBKDF2,
                                           password.UTF8String,
                                           password.length,
@@ -289,47 +293,41 @@
  //  Encryption with HMAC (Authenticated)
  //  ------------------------------------------------------------
  */
+ // Kek (key encryption key)
+ // Kak (key authentication key)
 + (NSData *)encryptThenMAC:(NSData *)data
-                       key:(NSData *)key
-                        iv:(NSData *)iv {
+                    intKey:(NSData *)Kak
+                    encKey:(NSData *)Kek{
     
-    if (key == nil || data == nil) {
+    if ((Kek == nil) || (Kak == nil)) {
         return nil;
     }
     
-    // initialization vector
-    if (iv == nil) {
-        iv = [Crypto generateRandomCrytoBytes:kCCBlockSizeAES128];
-    }
+    // randomize iv
+    NSData *iv = [Crypto getIV:kAES256_IV_LENGTH_BYTES];
     
     // encrypt
-    CCOptions padding = 0;
-    NSData *encryptedData = [self doCipher:data
-                                       key:key
-                                   context:kCCEncrypt
-                                      mode:kCCModeCTR
-                                 algorithm:kCCAlgorithmAES
-                                   padding:&padding
-                                        iv:iv];
-
+    NSData *encryptedData = [Crypto encryptAES_CTR:data key:Kek iv:iv];
+    
     if (encryptedData == nil) {
         return nil;
     }
     
-    NSInteger nbits = key.length * 8;
-
-    NSMutableData *Ki = [[NSMutableData alloc] initWithData:iv];
-    [Ki appendData:[[self sha256:key] subdataWithRange:NSMakeRange(kCCBlockSizeAES128, kCCBlockSizeAES128)]];
+    // integrity/authentication key
+    NSMutableData *Kmac = [[NSMutableData alloc] initWithData:Kak];
+    [Kmac appendData:iv];
     
-    NSData *digest = [self hmac:[self sha256:encryptedData]
-                            key:Ki
-                          nbits:nbits];
+    // generate HMAC
+    NSData *digest = [Crypto hmac:[Crypto sha256:encryptedData]
+                              key:[Crypto sha256:Kmac]
+                            nbits:(Kek.length * 8)];
     
-    // append encrypted data to hmac
-    NSMutableData *mutableData = [[NSMutableData alloc] initWithData:digest];
-    [mutableData appendData:encryptedData];
+    // append pub data and hmac to blob [iv, mac, blob] = [16 | 32 | N] byte array
+    NSMutableData *macstream = [[NSMutableData alloc] initWithData:iv];
+    [macstream appendData:digest];
+    [macstream appendData:encryptedData];
     
-    return mutableData;
+    return macstream;
 }
 #pragma mark - CHECK-MAC-THEN-DECRYPT
 + (NSData * _Nullable)decryptWithMAC:(NSData *)data
@@ -358,7 +356,9 @@
                               key:[Crypto sha256:macKey]
                             nbits:(key_length * 8)];
     
-    // check the HMAC and if integrity fails we should not trust the underlying data
+    // check the MAC, if integrity fails we don't trust the underlying plaintext.
+    // For example, someone could intentionally corrupt data in specific regions
+    // of ciphertext to cause arbitrary side effects in the app upon decryption.
     if (![digest isEqualToData:hmac]) {
         return nil;
     }
@@ -389,6 +389,7 @@
  //  - ECB should not be used if encrypting more than one block of data with the same key.
  //  - CBC, OFB and CFB are similar, however OFB/CFB is better because you only need encryption and not decryption, which can save code space.
  //  - CTR is used if you want good parallelization (ie. speed), instead of CBC/OFB/CFB.
+ //     - Reusing iv with the same key breaks encryption.
  //  ------------------------------------------------------------
  */
 #pragma mark - SYMMETRIC ENCRYPTION CIPHER
@@ -451,9 +452,8 @@
                                                    );
                 break;
             case kCCModeCTR:
-                // parallelization and diffusion for large data,
-                // no iv can be reused with the same key encryption
-                // key for subsequent messages
+                // parallelizable encryption and diffusion for large data,
+                // iv's SHOULD NEVER be reused with the same encryption key for subsequent messages
                 *padding = ccNoPadding;
                 
                 // apperently numCipherRounds is handled by default (cipher block rounds in CTR), using 0 as default (should be 8/12).
@@ -649,7 +649,7 @@
             [priv_left addObject:saltL];
             [priv_right addObject:saltR];
             
-            // hash each of the private hashes for the corresponding public hash values
+            // hash each of the private hashes for the corresponding public hashes
             NSData *pubsaltL = [Crypto sha256:saltL];
             NSData *pubsaltR = [Crypto sha256:saltR];
             [pub_left addObject:pubsaltL];

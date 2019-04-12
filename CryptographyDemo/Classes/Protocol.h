@@ -7,6 +7,16 @@
 #define kMSEC_IN_SEC 1000.0
 #define APP_PROTOCOL_VERSION 1
 
+#define PROTOCOL_VAULT_STRING @"vault"
+#define PROTOCOL_VERSION_STRING @"version"
+#define PROTOCOL_KDF_MODE_STRING @"kdfmode"
+#define PROTOCOL_ENCRYPTION_MODE_STRING @"encmode"
+#define PROTOCOL_SALT_STRING @"salt"
+#define PROTOCOL_ROUNDS_STRING @"rounds"
+#define PROTOCOL_IV_STRING @"iv"
+#define PROTOCOL_HMAC_STRING @"hmac"
+#define PROTOCOL_BLOB_STRING @"blob"
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface Protocol : NSObject
@@ -15,6 +25,13 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NS_ENUM(NSInteger, BBEncryptionMode) {
     BBEncryptAES = kCCAlgorithmAES,
     BBEncryptOTP = 7
+};
+
+// encryption algorithm type
+typedef NS_ENUM(NSInteger, AESBlockSize) {
+    AESBlockSize128 = 128,
+    AESBlockSize196 = 196,
+    AESBlockSize256 = 256
 };
 
 // key derivation mode
@@ -30,12 +47,11 @@ typedef NS_ENUM(NSInteger, BBKDFMode) {
 #pragma mark - JSON serializer
 + (NSString * _Nullable)jsonStringWithPrettyPrint:(id)object pretty:(BOOL)prettyPrint;
 
-#pragma mark - PROTOCOL DATA FOR AUTH KEY
-+ (NSData * _Nullable)createProtocolData:(NSInteger)keyLength
-                                  rounds:(NSInteger)rounds
-                                    mode:(BBEncryptionMode)algo
-                                    salt:(NSData *)salt
-                                    data:(NSData *)data;
++ (NSData *)createProtocolWithBlob:(NSData *)data
+                           kdfMode:(BBKDFMode)mode
+                           encMode:(BBEncryptionMode)encMode
+                              salt:(NSData *)salt
+                            rounds:(NSInteger)rounds;
 
 
 #pragma mark - PROTOCOL DATA FOR ONE-TIME-PROOF PAD

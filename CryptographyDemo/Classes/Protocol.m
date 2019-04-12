@@ -26,29 +26,32 @@
     }
 }
 
-#pragma mark - PROTOCOL DATA FOR AUTH KEY
-+ (NSData * _Nullable)createProtocolData:(NSInteger)keyLength
-                                  rounds:(NSInteger)rounds
-                                    mode:(BBEncryptionMode)algo
-                                    salt:(NSData *)salt
-                                    data:(NSData *)data{
-    
-    NSString *version_hex = [NSString stringWithFormat:@"%i", APP_PROTOCOL_VERSION];
-    NSString *mode_hex = [NSString stringWithFormat:@"%li", algo];
-    NSString *rounds_hex = [NSString stringWithFormat:@"%li", rounds];
-    NSString *salt_hex = [DataFormatter hexDataToString:salt];
-    NSString *blob = [DataFormatter hexDataToString:data];
 
+#pragma mark - PROTOCOL DATA FOR AUTH KEY
++ (NSData *)createProtocolWithBlob:(NSData *)data
+                           kdfMode:(BBKDFMode)kdfMode
+                           encMode:(BBEncryptionMode)encMode
+                              salt:(NSData *)salt
+                            rounds:(NSInteger)rounds{
+    
+    NSString *v = [NSString stringWithFormat:@"%i", APP_PROTOCOL_VERSION];
+    NSString *km = [NSString stringWithFormat:@"%li", kdfMode];
+    NSString *em = [NSString stringWithFormat:@"%li", encMode];
+    NSString *r = [NSString stringWithFormat:@"%li", rounds];
+    NSString *s = [DataFormatter hexDataToString:salt];
+    NSString *blob = [DataFormatter hexDataToString:data];
+    
     // TODO: convert to json
     NSMutableDictionary *pdict = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                  version_hex, @"v",
-                                  mode_hex, @"m",
-                                  rounds_hex, @"r",
-                                  salt_hex, @"salt",
-                                  blob, @"blob",
+                                  v, PROTOCOL_VERSION_STRING,
+                                  km, PROTOCOL_KDF_MODE_STRING,
+                                  em, PROTOCOL_ENCRYPTION_MODE_STRING,
+                                  r, PROTOCOL_ROUNDS_STRING,
+                                  s, PROTOCOL_SALT_STRING,
+                                  blob, PROTOCOL_BLOB_STRING,
                                   nil];
     
-    NSString *json = [DataFormatter hexDataToString:[[self jsonStringWithPrettyPrint:(id)pdict pretty:YES] dataUsingEncoding:NSUTF8StringEncoding]];
+    NSString *json = [DataFormatter hexDataToString:[[self jsonStringWithPrettyPrint:(id)pdict pretty:NO] dataUsingEncoding:NSUTF8StringEncoding]];
     NSInteger jsonLength = [DataFormatter hexStringToData:json].length;
     NSString *total_json_bytes_hex = [[DataFormatter hexFromInt:jsonLength prefix:YES] substringFromIndex:2];
     NSString *total_bytes_json_hex_length = [NSString stringWithFormat:@"0%li",total_json_bytes_hex.length/2];
@@ -57,7 +60,6 @@
                                                        total_bytes_json_hex_length,
                                                        total_json_bytes_hex,
                                                        json]];
-
     return protocol;
 }
 

@@ -43,7 +43,7 @@
 
 - (void)test_AES_ECB_128 {
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     
     NSData *iv = nil;
@@ -76,7 +76,7 @@
 
 - (void)test_AES_ECB_192 {
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     
     NSData *iv = nil;
@@ -109,7 +109,7 @@
 
 - (void)test_AES_ECB_256 {
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     
     NSData *iv = nil;

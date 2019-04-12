@@ -43,7 +43,7 @@
  */
 //- (void)test_AES_OFB_128{
 //
-//    // derive an encryption key from a password and encrypt
+//    
 //    NSData *msg = [DataFormatter hexStringToData:plainText];
 //    NSData *iv = [DataFormatter hexStringToData:ivec];
 //    NSData *key = [DataFormatter hexStringToData:KEY_OFB128];
@@ -74,7 +74,7 @@
 //}
 - (void)test_AES_OFB_192{
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     NSData *iv = [DataFormatter hexStringToData:ivec];
     NSData *key = [DataFormatter hexStringToData:KEY_OFB192];
@@ -105,7 +105,7 @@
 }
 - (void)test_AES_OFB_256{
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     NSData *iv = [DataFormatter hexStringToData:ivec];
     NSData *key = [DataFormatter hexStringToData:KEY_OFB256];

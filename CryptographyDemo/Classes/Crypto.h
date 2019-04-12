@@ -68,13 +68,10 @@
 
 // encrypt-then-mac
 + (NSData *)encryptThenMAC:(NSData *)data
-                       key:(NSData *)key
-                        iv:(NSData *)iv;
+                    intKey:(NSData *)Kak
+                    encKey:(NSData *)Kek;
 
 // check mac then decrypt
-//+ (NSData *)decryptWithMAC:(NSData *)data
-//                       key:(NSData *)key
-//                        iv:(NSData *)iv;
 + (NSData *)decryptWithMAC:(NSData *)data
                     intKey:(NSData *)Ky
                     encKey:(NSData *)Kx;

@@ -38,7 +38,7 @@
 //}
 - (void)test_AES_CBC_128{
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     NSData *iv = [DataFormatter hexStringToData:ivec];
     NSData *key = [DataFormatter hexStringToData:KEY_CBC128];
@@ -70,7 +70,7 @@
 
 - (void)test_AES_CBC_192{
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     NSData *iv = [DataFormatter hexStringToData:ivec];
     NSData *key = [DataFormatter hexStringToData:KEY_CBC192];
@@ -101,7 +101,7 @@
 }
 - (void)test_AES_CBC_256{
     
-    // derive an encryption key from a password and encrypt
+    
     NSData *msg = [DataFormatter hexStringToData:plainText];
     NSData *iv = [DataFormatter hexStringToData:ivec];
     NSData *key = [DataFormatter hexStringToData:KEY_CBC256];
