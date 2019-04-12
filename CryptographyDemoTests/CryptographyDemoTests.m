@@ -74,7 +74,7 @@
     
     NSInteger kdfmode = [parsedProtocol[PROTOCOL_KDF_MODE_STRING] integerValue];
     // not needed here but can allow abstraction for other implementations
-//    int encmode = [parsedProtocol[PROTOCOL_KDF_MODE_STRING] integerValue];
+//    int encmode = [parsedProtocol[PROTOCOL_ENCRYPTION_MODE_STRING] integerValue];
     NSInteger rounds = [parsedProtocol[PROTOCOL_ROUNDS_STRING] integerValue];
     NSInteger version = [parsedProtocol[PROTOCOL_VERSION_STRING] integerValue];
     NSData *parsed_salt = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_SALT_STRING]];
