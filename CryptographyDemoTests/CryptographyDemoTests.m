@@ -86,7 +86,7 @@
     XCTAssertNotNil(salt);
     XCTAssertNotNil(encryptedData);
     
-    NSData *key2 = [Crypto deriveKey:password_default
+    NSData *key2 = [Crypto deriveKey:password
                                 salt:parsed_salt
                                 mode:kdfmode
                               rounds:parsed_rounds];
