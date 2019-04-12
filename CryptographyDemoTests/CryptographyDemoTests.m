@@ -84,9 +84,6 @@
     Kx = [key2 subdataWithRange:NSMakeRange(0, kAES256_KEY_LENGTH_BYTES)];
     Ky = [key2 subdataWithRange:NSMakeRange(kAES256_KEY_LENGTH_BYTES, kAES256_KEY_LENGTH_BYTES)];
     
-    XCTAssertNotNil(Kx);
-    XCTAssertNotNil(Ky);
-    
     NSData *decryptedData = [Crypto decryptWithMAC:parsed_blob
                                             intKey:Ky
                                             encKey:Kx];
