@@ -32,7 +32,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     }
     
     NSMutableData *bitmap = [[NSMutableData alloc] initWithData:entropy];
-    NSData *hash = [Crypto sha:entropy nbits:nbytes*8];
+    NSData *hash = [Crypto sha256:entropy];
     NSData *checksum = [hash subdataWithRange:NSMakeRange(0, 2)];
     [bitmap appendData:checksum];
     
@@ -41,10 +41,14 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     NSString *binary = [DataFormatter hexToBinary:hex];
     
     NSMutableArray *mapping = [[NSMutableArray alloc] initWithCapacity:Nwords];
-    NSUInteger Nbits = binary.length/Nwords;
+    NSString *bitmask = @"11111111111";
     for (NSInteger i = 0; i < Nwords; i++) {
-        [mapping addObject:[binary substringToIndex:Nbits]];
-        binary = [binary substringFromIndex:Nbits];
+        if (binary.length < 11) {
+            [mapping addObject:[NSString stringWithFormat:@"%@%@", binary, [bitmask substringToIndex:11-binary.length]]];
+            break;
+        }
+        [mapping addObject:[binary substringToIndex:11]];
+        binary = [binary substringFromIndex:11];
     }
     
     NSMutableArray *indexes = [[NSMutableArray alloc] init];
@@ -54,18 +58,10 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     
     NSArray *dictionary = [self getBIP32Dictionary];
     NSMutableString *phrase = [[NSMutableString alloc] init];
-    NSMutableArray *usedWords = [[NSMutableArray alloc] initWithCapacity:Nwords];
     
     for (NSInteger i = 0; i < Nwords; i++) {
         NSInteger wordIndex = [[indexes objectAtIndex:i] integerValue];
         NSString *word = [dictionary objectAtIndex:wordIndex];
-        
-        // breaks tests, but could add to require unique word sequence outputs
-//        if ([usedWords containsObject:word]) {
-//            return nil;
-//        }
-        
-        [usedWords addObject:word];
         [phrase appendString:[NSString stringWithFormat:@"%@ ",word]];
     }
     
@@ -100,7 +96,7 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     }
     
     NSInteger nwords = words.count;
-    if (nwords != kSeedWords12 && nwords != kSeedWords18 && nwords != kSeedWords24) {
+    if (nwords != kSeedWords12 && nwords != kSeedWords18 && nwords != kSeedWords24 && nwords != kSeedWords48) {
         return nil;
     }
     
@@ -150,12 +146,10 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
     }
     
     entropy_data = [entropy_data subdataWithRange:NSMakeRange(0, nbytes)];
-    checksum = [[Crypto sha256:entropy_data] subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes64 ?
-                                                                                     4 : (nbytes == kSeedBytes32 ?
-                                                                                          2 : 1)))];
+    checksum = [[Crypto sha256:entropy_data] subdataWithRange:NSMakeRange(0, 2)];
     
-    NSData *hash = [Crypto sha:entropy_data nbits:nbytes*8];
-    NSData *checksum_hash = [hash subdataWithRange:NSMakeRange(0, (nbytes == kSeedBytes32 ? 2 : 1))];
+    NSData *hash = [Crypto sha256:entropy_data];
+    NSData *checksum_hash = [hash subdataWithRange:NSMakeRange(0, 2)];
     
     if ([checksum_hash isEqualToData:checksum]) {
         return entropy_data;
@@ -190,6 +184,8 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
             return kSeedBytes24;
         case kSeedWords24:
             return kSeedBytes32;
+        case kSeedWords48:
+            return kSeedBytes64;
         default:
             return kSeedBytes16;
     }
@@ -204,6 +200,8 @@ NS_ENUM(NSInteger, CCSeedEntropy) {
             return kSeedWords18;
         case kSeedBytes32:
             return kSeedWords24;
+        case kSeedBytes64:
+            return kSeedWords48;
         default:
             return kSeedWords12;
     }

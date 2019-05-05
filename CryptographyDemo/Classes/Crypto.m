@@ -1,4 +1,5 @@
 #import "Crypto.h"
+#import "Timer.h"
 
 
 @implementation Crypto
@@ -127,7 +128,7 @@
                  mode:(BBKDFMode)mode
                rounds:(NSInteger)rounds{
     
-    if (password.length == 0 || rounds == 0) {
+    if (password.length == 0) {
         return nil;
     }
     
@@ -151,8 +152,8 @@
             break;
             
             // secure enclave device biometry key
-        case enclaveKey:
         case aesKey:
+        case enclaveKey:
             derivedKey = [NSMutableData dataWithLength:kHMAC_SHA256_SALT_LENGTH];
             result = CCKeyDerivationPBKDF(kCCPBKDF2,
                                           password.UTF8String,
@@ -160,6 +161,42 @@
                                           salt.bytes,
                                           salt.length,
                                           kCCPRFHmacAlgSHA256,
+                                          kKDFRoundsDigest256,
+                                          derivedKey.mutableBytes,
+                                          derivedKey.length);
+            break;
+        case pincodeKey:
+            derivedKey = [NSMutableData dataWithLength:kHMAC_SHA512_SALT_LENGTH];
+            result = CCKeyDerivationPBKDF(kCCPBKDF2,
+                                          password.UTF8String,
+                                          password.length,
+                                          salt.bytes,
+                                          salt.length,
+                                          kCCPRFHmacAlgSHA512,
+                                          kKDFRoundsDigest256,
+                                          derivedKey.mutableBytes,
+                                          derivedKey.length);
+            break;
+        case otp256:
+            derivedKey = [NSMutableData dataWithLength:kHMAC_SHA256_SALT_LENGTH];
+            result = CCKeyDerivationPBKDF(kCCPBKDF2,
+                                          password.UTF8String,
+                                          password.length,
+                                          salt.bytes,
+                                          salt.length,
+                                          kCCPRFHmacAlgSHA256,
+                                          (unsigned int)rounds,
+                                          derivedKey.mutableBytes,
+                                          derivedKey.length);
+            break;
+        case otp512:
+            derivedKey = [NSMutableData dataWithLength:kHMAC_SHA512_SALT_LENGTH];
+            result = CCKeyDerivationPBKDF(kCCPBKDF2,
+                                          password.UTF8String,
+                                          password.length,
+                                          salt.bytes,
+                                          salt.length,
+                                          kCCPRFHmacAlgSHA512,
                                           (unsigned int)rounds,
                                           derivedKey.mutableBytes,
                                           derivedKey.length);
@@ -693,6 +730,7 @@
     
     NSInteger nonce = 0;
     NSInteger nonce_limit = (NSInteger)pow(2.0, 32.0) - 1;
+    NSDate *startDate = [NSDate dateWithTimeIntervalSinceNow:0];
     BOOL proceed = YES;
 
     //    NSDate *startDate = [NSDate dateWithTimeIntervalSinceNow:0];
@@ -707,7 +745,9 @@
             // check proof
             if ([[[DataFormatter hexDataToString:[hash subdataWithRange:range]] substringToIndex:diff] isEqualToString:zeros])
             {
+                double timeToProve = -[Timer computeTimeInterval:startDate];
                 NSMutableDictionary *dict = [[NSMutableDictionary alloc] initWithCapacity:3];
+                [dict setObject:[NSNumber numberWithDouble:timeToProve] forKey:@"time"];
                 [dict setObject:hash forKey:@"proof"];
                 [dict setObject:challenge forKey:@"challenge"];
                 [dict setObject:[NSNumber numberWithInteger:nonce] forKey:@"nonce"];

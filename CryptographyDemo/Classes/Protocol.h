@@ -7,15 +7,16 @@
 #define kMSEC_IN_SEC 1000.0
 #define APP_PROTOCOL_VERSION 1
 
-#define PROTOCOL_VAULT_STRING @"vault"
-#define PROTOCOL_VERSION_STRING @"version"
-#define PROTOCOL_KDF_MODE_STRING @"kdfmode"
-#define PROTOCOL_ENCRYPTION_MODE_STRING @"encmode"
-#define PROTOCOL_SALT_STRING @"salt"
-#define PROTOCOL_ROUNDS_STRING @"rounds"
-#define PROTOCOL_IV_STRING @"iv"
-#define PROTOCOL_HMAC_STRING @"hmac"
-#define PROTOCOL_BLOB_STRING @"blob"
+#define PROTOCOL_VERSION_KEY @"version"
+#define PROTOCOL_KDF_MODE_KEY @"kdfmode"
+#define PROTOCOL_ENCRYPTION_MODE_KEY @"mode"
+
+#define PROTOCOL_SALT_KEY @"salt"
+#define PROTOCOL_ROUNDS_KEY @"rounds"
+#define PROTOCOL_DIFFICULTY_KEY @"difficulty"
+#define PROTOCOL_IV_KEY @"iv"
+#define PROTOCOL_HMAC_KEY @"hmac"
+#define PROTOCOL_BLOB_KEY @"blob"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -41,6 +42,8 @@ typedef NS_ENUM(NSInteger, BBKDFMode) {
     enclaveKey,
     pincodeKey,
     aesKey,
+    otp256,
+    otp512
 };
 
 
@@ -54,20 +57,18 @@ typedef NS_ENUM(NSInteger, BBKDFMode) {
                             rounds:(NSInteger)rounds;
 
 
-#pragma mark - PROTOCOL DATA FOR ONE-TIME-PROOF PAD
-+ (NSData * _Nullable)createOTPProtocolData:(NSInteger)keyLength
-                                     rounds:(NSInteger)rounds
-                                       mode:(BBEncryptionMode)algo
-                                 difficulty:(NSInteger)diff
-                                       salt:(NSData *)salt;
-
-
-#pragma mark - PARSING PROTOCOL FOR BACKUP DATA
+#pragma mark - PROTOCOL FOR BACKUP DATA
 + (NSData * _Nullable)createBackupProtocolDataWithMode:(BBEncryptionMode)algo
                                                   salt:(NSData *)salt
                                                     iv:(NSData *)iv
                                                 rounds:(NSInteger)rounds
                                                 digest:(NSData *)digest;
+
++ (NSData *)createOTPProtocolData:(NSData *)data
+                             salt:(NSData *)salt
+                           rounds:(NSInteger)rounds
+                          kdfmode:(BBKDFMode)kdfMode
+                       difficulty:(NSInteger)difficulty;
 
 #pragma mark - PARSING PROTOCOL DATA FOR AUTH KEY
 + (NSDictionary * _Nullable)parseBlob:(NSData *)data;

@@ -88,7 +88,11 @@
     NSString *mnemonic = [Mnemonic generateMemnonic:entropy];
     XCTAssertEqualObjects(mnemonic, @"hamster diagram private dutch cause delay private meat slide toddler razor book happy fancy gospel tennis maple dilemma loan word shrug inflict delay length");
 }
-
+- (void)test_Mnemonic_48_Words {
+    NSData *entropy = [DataFormatter hexStringToData:@"89badee99f43b9eb8d2005589de41fa612cdae96255c1a7e5583d78d56a21bf8a7a2b26cd1b70b227f7101cfcabecf98757905888d05323698b0be37322e865a"];
+    NSString *mnemonic = [Mnemonic generateMemnonic:entropy];
+    XCTAssertEqualObjects(mnemonic, @"meadow street risk direct describe volume cruel absent flat upset among equip coast struggle flat process bounce verify genius pyramid step extra husband belt pencil nature crucial host rate distance series delay skirt wait toward turtle motion session cross play custom sheriff convince hover carry drip health combine");
+}
 
 - (void)test_Mnemonic_7f {
     NSData *entropy = [DataFormatter hexStringToData:@"7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f"];

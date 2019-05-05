@@ -31,7 +31,7 @@
 
 - (void)test_encryptDecrypt_Blob {
     
-    NSData *msg = [mnemonic12 dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *msg = [Mnemonic entropyFromMemnonic:mnemonic12];
     NSData *salt = [DataFormatter hexStringToData:SALT_512];
     NSInteger kdf_rounds = kKDFRoundsTEST;
     
@@ -61,13 +61,13 @@
     NSDictionary *parsedProtocol = [Protocol parseBlob:protocol];
     XCTAssertNotNil(parsedProtocol);
     
-    NSInteger parsed_kdfmode = [parsedProtocol[PROTOCOL_KDF_MODE_STRING] integerValue];
+    NSInteger parsed_kdfmode = [parsedProtocol[PROTOCOL_KDF_MODE_KEY] integerValue];
     // not needed here but can allow abstraction for other implementations
-//    int encmode = [parsedProtocol[PROTOCOL_ENCRYPTION_MODE_STRING] integerValue];
-    NSInteger parsed_rounds = [parsedProtocol[PROTOCOL_ROUNDS_STRING] integerValue];
-    NSInteger parsed_version = [parsedProtocol[PROTOCOL_VERSION_STRING] integerValue];
-    NSData *parsed_salt = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_SALT_STRING]];
-    NSData *parsed_blob = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_BLOB_STRING]];
+//    int encmode = [parsedProtocol[PROTOCOL_ENCRYPTION_MODE_KEY] integerValue];
+    NSInteger parsed_rounds = [parsedProtocol[PROTOCOL_ROUNDS_KEY] integerValue];
+    NSInteger parsed_version = [parsedProtocol[PROTOCOL_VERSION_KEY] integerValue];
+    NSData *parsed_salt = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_SALT_KEY]];
+    NSData *parsed_blob = [DataFormatter hexStringToData:parsedProtocol[PROTOCOL_BLOB_KEY]];
     
     XCTAssertTrue(parsed_version == APP_PROTOCOL_VERSION);
     XCTAssertTrue(parsed_rounds == kdf_rounds);
@@ -87,10 +87,7 @@
     NSData *decryptedData = [Crypto decryptWithMAC:parsed_blob
                                             intKey:Ky
                                             encKey:Kx];
-    
-    XCTAssertNotNil(decryptedData);
-    NSString *decodedString = [[NSString alloc] initWithData:decryptedData encoding:NSUTF8StringEncoding];
-    XCTAssertEqualObjects(decodedString, mnemonic12);
+    XCTAssertEqualObjects(decryptedData, msg);
 }
 
 - (void)test_proofOfWork {
