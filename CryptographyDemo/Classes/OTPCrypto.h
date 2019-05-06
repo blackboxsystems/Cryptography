@@ -11,7 +11,12 @@ NS_ASSUME_NONNULL_BEGIN
            difficulty:(NSInteger)diff
               encrypt:(BOOL)encrypting;
 
-
++ (NSData *)deriveTimedOTP:(NSString *)seed
+                      salt:(NSData *)salt
+                      data:(NSData *)plaintext
+                   padTime:(double)padTime
+                    rounds:(NSInteger)rounds
+                   encrypt:(BOOL)encrypt;
 @end
 
 NS_ASSUME_NONNULL_END

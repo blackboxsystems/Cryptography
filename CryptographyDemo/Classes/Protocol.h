@@ -9,7 +9,7 @@
 
 #define PROTOCOL_VERSION_KEY @"version"
 #define PROTOCOL_KDF_MODE_KEY @"kdfmode"
-#define PROTOCOL_ENCRYPTION_MODE_KEY @"mode"
+#define PROTOCOL_ENCRYPTION_MODE_KEY @"encmode"
 
 #define PROTOCOL_SALT_KEY @"salt"
 #define PROTOCOL_ROUNDS_KEY @"rounds"
@@ -25,7 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 // encryption algorithm type
 typedef NS_ENUM(NSInteger, BBEncryptionMode) {
     BBEncryptAES = kCCAlgorithmAES,
-    BBEncryptOTP = 7
+    BBEncryptOTP = 7,
+    BBEncryptOTP_POW,
+    BBEncryptOTP_TIME
 };
 
 // encryption algorithm type
@@ -57,26 +59,18 @@ typedef NS_ENUM(NSInteger, BBKDFMode) {
                             rounds:(NSInteger)rounds;
 
 
-#pragma mark - PROTOCOL FOR BACKUP DATA
-+ (NSData * _Nullable)createBackupProtocolDataWithMode:(BBEncryptionMode)algo
-                                                  salt:(NSData *)salt
-                                                    iv:(NSData *)iv
-                                                rounds:(NSInteger)rounds
-                                                digest:(NSData *)digest;
-
 + (NSData *)createOTPProtocolData:(NSData *)data
                              salt:(NSData *)salt
                            rounds:(NSInteger)rounds
                           kdfmode:(BBKDFMode)kdfMode
+                          encmode:(BBEncryptionMode)encmode
                        difficulty:(NSInteger)difficulty;
 
-#pragma mark - PARSING PROTOCOL DATA FOR AUTH KEY
+#pragma mark - PARSE WRAPPER
 + (NSDictionary * _Nullable)parseBlob:(NSData *)data;
 
-#pragma mark - GENERAL UNDERLYING PROTOCOL PARSING FUNCTION
+#pragma mark - PROTOCOL PARSER
 + (NSDictionary * _Nullable)protocolParser:(NSData *)data;
-
-//+ (NSInteger)rangeForOpCode:(NSData *)opcode;
 
 @end
 

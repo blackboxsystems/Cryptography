@@ -7,7 +7,7 @@
 
 
 // key derivation rounds
-#define kPBKDFRoundsAES 4096
+#define kPBKDFRoundsDefault 4096
 #define kMaxNonce 4294967295
 
 // key length bytes
@@ -28,8 +28,9 @@
 
 // SHA hash
 + (NSData *)sha256:(NSData *)data;
++ (NSData *)sha512:(NSData *)data;
 + (NSData *)sha:(NSData *)data
-          nbits:(NSInteger)nbytes;
+          nbits:(NSInteger)nbits;
 
 // Hashed Message Authentication Code
 + (NSData *)hmac:(NSData *)data

@@ -37,11 +37,16 @@
     if (data == nil) {
         return data;
     }
+
+    return [self sha:data nbits:256];
+}
++ (NSData *)sha512:(NSData *)data{
     
-    NSMutableData *digest = [[NSMutableData alloc] initWithLength:CC_SHA256_DIGEST_LENGTH];
-    (void) CC_SHA256(data.bytes, (CC_LONG) data.length, digest.mutableBytes);
+    if (data == nil) {
+        return nil;
+    }
     
-    return digest;
+    return [self sha:data nbits:512];
 }
 + (NSData *)sha:(NSData *)data
           nbits:(NSInteger)nbits {
@@ -130,6 +135,10 @@
     
     if (password.length == 0) {
         return nil;
+    }
+    
+    if (rounds == 0) {
+        rounds = kPBKDFRoundsDefault;
     }
     
     NSMutableData *derivedKey;
@@ -733,7 +742,6 @@
     NSDate *startDate = [NSDate dateWithTimeIntervalSinceNow:0];
     BOOL proceed = YES;
 
-    //    NSDate *startDate = [NSDate dateWithTimeIntervalSinceNow:0];
     while (proceed)
     {
         @autoreleasepool
