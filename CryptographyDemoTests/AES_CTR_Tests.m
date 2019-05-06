@@ -160,7 +160,7 @@
     
     // obtain same encrypted result via xor'ing msg with key stream
     NSData *xorEncryptedData = [Crypto xorData:msg withData:keyStream];
-    NSLog(@"XOR EncryptedData[%li]: %@", xorEncryptedData.length, xorEncryptedData);
+//    NSLog(@"XOR EncryptedData[%li]: %@", xorEncryptedData.length, xorEncryptedData);
     XCTAssertEqualObjects(xorEncryptedData, encryptedMessageData);
     
     NSData *decryptedMsg = [Crypto xorData:keyStream withData:encryptedMessageData];
