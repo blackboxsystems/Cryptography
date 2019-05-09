@@ -137,7 +137,7 @@
                       data:(NSData *)plaintext
                    padTime:(double)padTime
                     rounds:(NSInteger)rounds
-               blockRounds:(NSInteger)blockRounds
+               blockRounds:(NSInteger)rblocks
                    encrypt:(BOOL)encrypt{
     
     NSDate *methodStart = [NSDate date];
