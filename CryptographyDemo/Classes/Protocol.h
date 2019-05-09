@@ -13,6 +13,7 @@
 
 #define PROTOCOL_SALT_KEY @"salt"
 #define PROTOCOL_ROUNDS_KEY @"rounds"
+#define PROTOCOL_BLOCK_ROUNDS_KEY @"block_rounds"  // recurring timed block rounds
 #define PROTOCOL_DIFFICULTY_KEY @"difficulty"
 #define PROTOCOL_IV_KEY @"iv"
 #define PROTOCOL_HMAC_KEY @"hmac"
@@ -62,6 +63,7 @@ typedef NS_ENUM(NSInteger, BBKDFMode) {
 + (NSData *)createOTPProtocolData:(NSData *)data
                              salt:(NSData *)salt
                            rounds:(NSInteger)rounds
+                      blockRounds:(NSInteger)blockRounds
                           kdfmode:(BBKDFMode)kdfMode
                           encmode:(BBEncryptionMode)encmode
                        difficulty:(NSInteger)difficulty;

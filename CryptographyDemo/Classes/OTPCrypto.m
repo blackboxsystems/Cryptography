@@ -110,6 +110,7 @@
     NSData *protocol = [Protocol createOTPProtocolData:outputData
                                                   salt:salt
                                                 rounds:rounds
+                                           blockRounds:0
                                                kdfmode:otpMode
                                                encmode:BBEncryptOTP_POW
                                             difficulty:diff];
@@ -136,6 +137,7 @@
                       data:(NSData *)plaintext
                    padTime:(double)padTime
                     rounds:(NSInteger)rounds
+               blockRounds:(NSInteger)blockRounds
                    encrypt:(BOOL)encrypt{
     
     NSDate *methodStart = [NSDate date];
@@ -167,6 +169,8 @@
         blocks = floor(dataLength / blockSize) + (dataLength % blockSize == 0 ? 0 : 1);
     }
     
+    BOOL continueRounds = (rblocks > 0 && rblocks > blocks);
+    
     // calculate pad block time
     double timePerBlock = padTime/blocks;
     if (timePerBlock < kMSEC_IN_SEC) {
@@ -193,7 +197,8 @@
     // build intermediate pad
     NSMutableData *ipad = [[NSMutableData alloc] init];
 
-    for (NSInteger i = 0; i < blocks; i++)
+    NSInteger tempBlocks = blocks;
+    for (NSInteger i = 0; i < tempBlocks; i++)
     {
         methodStart = [NSDate date];
         
@@ -208,6 +213,24 @@
         // mutate salt
         mutableSalt = [Crypto xorData:[Crypto sha256:Kx] withData:[Crypto sha256:Ky]];
 
+        // make sure we take atleast padTime to execute
+        if (encrypt) {
+            double tempExecutionTime = -[Timer computeTimeInterval:methodStart];
+            if (totalExecutionTime + tempExecutionTime < padTime/1000.0) {
+                totalExecutionTime += tempExecutionTime;
+                nonceTotal += blockRounds;
+                tempBlocks++;
+                continue;
+            }
+        } else if (continueRounds) {
+            if (tempBlocks < rblocks) {
+                tempBlocks++;
+            }
+            continueRounds = (tempBlocks < rblocks);
+            nonceTotal += blockRounds;
+            continue;
+        }
+        
         // append hmac of split keys
         [ipad appendData:[Crypto hmac:(i == 0 ? Kx : [Crypto sha256:ipad])
                                   key:Ky
@@ -242,6 +265,7 @@
     NSData *protocol = [Protocol createOTPProtocolData:outputData
                                                   salt:salt
                                                 rounds:rounds
+                                           blockRounds:tempBlocks
                                                kdfmode:masterKey
                                                encmode:BBEncryptOTP_TIME
                                             difficulty:0];

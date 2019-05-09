@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
                       data:(NSData *)plaintext
                    padTime:(double)padTime
                     rounds:(NSInteger)rounds
+               blockRounds:(NSInteger)blockRounds
                    encrypt:(BOOL)encrypt;
 @end
 

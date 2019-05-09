@@ -67,6 +67,7 @@
 + (NSData *)createOTPProtocolData:(NSData *)data
                              salt:(NSData *)salt
                            rounds:(NSInteger)rounds
+                      blockRounds:(NSInteger)blockRounds
                           kdfmode:(BBKDFMode)kdfMode
                           encmode:(BBEncryptionMode)encMode
                        difficulty:(NSInteger)difficulty{
@@ -75,6 +76,7 @@
     NSString *encmodeString = [NSString stringWithFormat:@"%li", encMode];
     NSString *kdfmodeString = [NSString stringWithFormat:@"%li", kdfMode];
     NSString *roundsString = [NSString stringWithFormat:@"%li", rounds];
+    NSString *blockRoundsString = [NSString stringWithFormat:@"%li", blockRounds];
     NSString *saltString = [DataFormatter hexDataToString:salt];
     NSString *diffString = [NSString stringWithFormat:@"%li", difficulty];
     NSString *blobString = [DataFormatter hexDataToString:data];
@@ -84,6 +86,7 @@
                                   kdfmodeString, PROTOCOL_KDF_MODE_KEY,
                                   encmodeString, PROTOCOL_ENCRYPTION_MODE_KEY,
                                   roundsString, PROTOCOL_ROUNDS_KEY,
+                                  blockRoundsString, PROTOCOL_BLOCK_ROUNDS_KEY,
                                   diffString, PROTOCOL_DIFFICULTY_KEY,
                                   saltString, PROTOCOL_SALT_KEY,
                                   blobString, PROTOCOL_BLOB_KEY,

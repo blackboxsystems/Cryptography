@@ -9,8 +9,6 @@
 #define mnemonic12      @"color install recipe clown empty bind safe what dream fat move grow"
 #define mnemonic24      @"hamster diagram private dutch cause delay private meat slide toddler razor book happy fancy gospel tennis maple dilemma loan word shrug inflict delay length"
 
-#define mnemonic48      @"meadow street risk direct describe volume cruel absent flat upset among equip coast struggle flat process bounce verify genius pyramid step extra husband belt pencil nature crucial host rate distance series delay skirt wait toward turtle motion session cross play custom sheriff convince hover carry drip health combine"
-
 #define kSalt512    @"89badee99f43b9eb8d2005589de41fa612cdae96255c1a7e5583d78d56a21bf8a7a2b26cd1b70b227f7101cfcabecf98757905888d05323698b0be37322e865a"
 
 @interface OTPEncryptionTests : XCTestCase
@@ -67,7 +65,7 @@
 - (void)test_ONE_TIME_PAD_PROTOCOL_TIMED {
     
     // target time in seconds for pad generation
-    double targetSeconds = 5.0;
+    double targetSeconds = 10.0;
     NSData *plaintext = [Mnemonic entropyFromMemnonic:mnemonic24];
     NSData *salt = [DataFormatter hexStringToData:kSalt512];
     
@@ -77,6 +75,7 @@
                                         data:plaintext
                                      padTime:kMSEC_IN_SEC*targetSeconds
                                       rounds:0
+                                 blockRounds:0
                                      encrypt:YES];
     
     // parse parameters to check decryption
@@ -84,6 +83,7 @@
 //    NSLog(@"\nparsed Timed OTP Blob: %@",parsedOTPBlob);
     NSData *parsed_salt = [DataFormatter hexStringToData:[parsedOTPBlob objectForKey:PROTOCOL_SALT_KEY]];
     NSInteger parsed_rounds = [[parsedOTPBlob objectForKey:PROTOCOL_ROUNDS_KEY] integerValue];
+    NSInteger parsed_round_blocks = [[parsedOTPBlob objectForKey:PROTOCOL_BLOCK_ROUNDS_KEY] integerValue];
     NSData *parsed_blob = [DataFormatter hexStringToData:[parsedOTPBlob objectForKey:PROTOCOL_BLOB_KEY]];
     
     // decrypt and check
@@ -92,6 +92,7 @@
                                                  data:parsed_blob
                                               padTime:0.0
                                                rounds:parsed_rounds
+                                          blockRounds:parsed_round_blocks
                                               encrypt:NO];
     
     XCTAssertEqualObjects(decrypted_pad, plaintext);
