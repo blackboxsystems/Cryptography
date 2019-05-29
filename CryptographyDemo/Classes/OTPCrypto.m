@@ -16,10 +16,8 @@
  * This implementation builds an intermediate pad through a recursive hash mechanism somewhat similar to a merkle tree using a derived key from a seed, 
  where the next hash is appended as the output based on the previous blocks (rows) in the pad. After the intermediate pad is built, we take the hash 
  of the entire pad and XOR this hash while also mutating it across the transposition of the intermediate pad.  This gives a strong security 
- property (it takes computational power and is memory-hard from recursive hashing of proofs) in that it can't be parallelized.  
-     If we did not perform this final step, an attacker would just have to compute the first row of the pad in order to
- know he has found the right inputs to continue on decrypting.  Generating the final pad using a hash of the intermediate pad ultimately
- forces an attacker to compute the entire pad through the algorithm.
+ property in that it can't be parallelized (it takes computational power and is memory-hard from recursive hashing of proofs).  This final step ultimately
+ forces an attacker to compute the entire pad through the algorithm, otherwise we can enforce plausible deniablilty.
  
  * This implementation can also be used and tweaked in other ways, and may have other interesting properties.  
  
@@ -84,7 +82,7 @@
     {
         // do work
         NSDictionary *dict = [Crypto proofOfWork:rootKey difficulty:diff];
-//        NSLog(@"\nproof: %@",dict);
+//        NSLog(@"\nproof dict: %@",dict);
         NSData *proof = [dict objectForKey:@"proof"];
         totalExecutionTime += [[dict objectForKey:@"time"] doubleValue];
         nonceTotal += [[dict objectForKey:@"nonce"] integerValue];
