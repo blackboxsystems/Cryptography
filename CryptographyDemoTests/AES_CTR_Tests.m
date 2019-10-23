@@ -205,6 +205,22 @@
     XCTAssertNotEqualObjects(msg, decryptedData);
 }
 
+// This test shows how the underlying iv counter in AES-CTR iterates.
+- (void)test_AES_CTR_IV_Overflow_Counter_Reset
+{
+    NSData *empty_msg = [DataFormatter hexStringToData:@"00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000"];
 
+    NSData *iv1 = [DataFormatter hexStringToData:@"FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF"];
+    NSData *iv2 = [DataFormatter hexStringToData:@"FFFFFFFF FFFFFFFF 00000000 00000000"];
+    NSData *key = [DataFormatter hexStringToData:@"00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000"];
+
+    // encrypt
+    NSData *Ea = [Crypto encryptAES_CTR:empty_msg key:key iv:iv1];
+    NSData *Eb = [Crypto encryptAES_CTR:empty_msg key:key iv:iv2];
+//    NSLog(@"\n\nEa: %@\nEb: %@", Ea, Eb);
+
+    XCTAssertEqualObjects([Ea subdataWithRange:NSMakeRange(Ea.length/2, Ea.length/2)],
+                          [Eb subdataWithRange:NSMakeRange(0, Ea.length/2)]);
+}
 
 @end
