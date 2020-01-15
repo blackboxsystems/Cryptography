@@ -23,8 +23,9 @@
 
 Interesting work:
 
-1. https://arxiv.org/abs/1906.10817
-1. https://eprint.iacr.org/2019/1139
+1. https://arxiv.org/pdf/1906.10817
+2. https://eprint.iacr.org/2019/1139
+3. https://blog.ricmoo.com/sqrl-ing-mnemonic-phrases-b68b2dc1f75b
 
  @param seed secret input (one time password)
  @param salt public salt entropy for kdf
