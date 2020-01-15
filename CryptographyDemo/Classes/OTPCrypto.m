@@ -20,12 +20,12 @@
  forces an attacker to compute the entire pad through the algorithm, otherwise we can enforce plausible deniablilty.
  
  * This implementation can also be used and tweaked in other ways, and may have other interesting properties.  
- 
- * An interesting property to think about is (if possible): 
-      - How can you verify the pad is correct without having to do the work to regenerate the entire pad, and, while also not requiring us to 
-      expose any private keys that were used to seed and form the solution?  This may need a different implemenation and some intermediate 
-      (and non-sensitive) keys to be kept through the pad's formation (ie. an intermediate hash is published, while its preimage is kept to verify pad row format later).
-      
+
+Interesting work:
+
+1. https://arxiv.org/abs/1906.10817
+1. https://eprint.iacr.org/2019/1139
+
  @param seed secret input (one time password)
  @param salt public salt entropy for kdf
  @param plaintext data to encrypt
