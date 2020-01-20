@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A9F0BDB623D521E100BA8FD5 /* AES_MerkleTree_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = A9F0BDB523D521E100BA8FD5 /* AES_MerkleTree_Tests.m */; };
+		A9F0BDB923D5220F00BA8FD5 /* TestVectorConstants.m in Sources */ = {isa = PBXBuildFile; fileRef = A9F0BDB823D5220F00BA8FD5 /* TestVectorConstants.m */; };
 		CE5F260020AB997E00518422 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = CE5F25FF20AB997E00518422 /* AppDelegate.m */; };
 		CE5F260320AB997E00518422 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = CE5F260220AB997E00518422 /* ViewController.m */; };
 		CE5F260620AB997E00518422 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CE5F260420AB997E00518422 /* Main.storyboard */; };
@@ -45,6 +47,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A9F0BDB523D521E100BA8FD5 /* AES_MerkleTree_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AES_MerkleTree_Tests.m; sourceTree = "<group>"; };
+		A9F0BDB723D5220F00BA8FD5 /* TestVectorConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestVectorConstants.h; sourceTree = "<group>"; };
+		A9F0BDB823D5220F00BA8FD5 /* TestVectorConstants.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestVectorConstants.m; sourceTree = "<group>"; };
 		CE5F25FB20AB997E00518422 /* CryptographyDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CryptographyDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE5F25FE20AB997E00518422 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		CE5F25FF20AB997E00518422 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -103,6 +108,55 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A9F0BDBA23D5302700BA8FD5 /* Symmetric Encryption */ = {
+			isa = PBXGroup;
+			children = (
+				A9F0BDB523D521E100BA8FD5 /* AES_MerkleTree_Tests.m */,
+				CEC3F63A21783EBB007986AD /* AES_CBC_Tests.m */,
+				CEC3F63721783EBB007986AD /* AES_CFB_Tests.m */,
+				CEC3F63921783EBB007986AD /* AES_CTR_Tests.m */,
+				CEC3F63821783EBB007986AD /* AES_ECB_Tests.m */,
+				CE9B645A2256E00C004042F5 /* AES_OFB_Tests.m */,
+			);
+			path = "Symmetric Encryption";
+			sourceTree = "<group>";
+		};
+		A9F0BDBB23D5304500BA8FD5 /* Digital Signatures */ = {
+			isa = PBXGroup;
+			children = (
+				CEC540A22128A179008032F7 /* KeychainWrapperMock.h */,
+				CEC540A32128A179008032F7 /* KeychainWrapperMock.m */,
+				CE9B64562256DEB2004042F5 /* AsymmetricKeyTests.m */,
+				CE9B64582256DEF7004042F5 /* LamportSignatureTests.m */,
+			);
+			path = "Digital Signatures";
+			sourceTree = "<group>";
+		};
+		A9F0BDBC23D5347100BA8FD5 /* DOTP Encryption */ = {
+			isa = PBXGroup;
+			children = (
+				F832937C227E23430097011E /* OTPEncryptionTests.m */,
+			);
+			path = "DOTP Encryption";
+			sourceTree = "<group>";
+		};
+		A9F0BDBD23D5348C00BA8FD5 /* Hashing */ = {
+			isa = PBXGroup;
+			children = (
+				CEC3F63B21783EBB007986AD /* HashKeyDerivationTests.m */,
+			);
+			path = Hashing;
+			sourceTree = "<group>";
+		};
+		A9F0BDBE23D534A400BA8FD5 /* Other */ = {
+			isa = PBXGroup;
+			children = (
+				CEC3F6442178467E007986AD /* MnemonicTests.m */,
+				CE5F261720AB997F00518422 /* CryptographyDemoTests.m */,
+			);
+			path = Other;
+			sourceTree = "<group>";
+		};
 		CE5F25F220AB997E00518422 = {
 			isa = PBXGroup;
 			children = (
@@ -141,20 +195,12 @@
 		CE5F261620AB997F00518422 /* CryptographyDemoTests */ = {
 			isa = PBXGroup;
 			children = (
-				CEC3F63A21783EBB007986AD /* AES_CBC_Tests.m */,
-				CEC3F63721783EBB007986AD /* AES_CFB_Tests.m */,
-				CEC3F63921783EBB007986AD /* AES_CTR_Tests.m */,
-				CEC3F63821783EBB007986AD /* AES_ECB_Tests.m */,
-				CE9B645A2256E00C004042F5 /* AES_OFB_Tests.m */,
-				CEC3F63B21783EBB007986AD /* HashKeyDerivationTests.m */,
-				CEC3F6442178467E007986AD /* MnemonicTests.m */,
-				CE5F261720AB997F00518422 /* CryptographyDemoTests.m */,
-				CEC540A22128A179008032F7 /* KeychainWrapperMock.h */,
-				CEC540A32128A179008032F7 /* KeychainWrapperMock.m */,
+				A9F0BDBE23D534A400BA8FD5 /* Other */,
+				A9F0BDBD23D5348C00BA8FD5 /* Hashing */,
+				A9F0BDBC23D5347100BA8FD5 /* DOTP Encryption */,
+				A9F0BDBB23D5304500BA8FD5 /* Digital Signatures */,
+				A9F0BDBA23D5302700BA8FD5 /* Symmetric Encryption */,
 				CE5F261920AB997F00518422 /* Info.plist */,
-				CE9B64562256DEB2004042F5 /* AsymmetricKeyTests.m */,
-				CE9B64582256DEF7004042F5 /* LamportSignatureTests.m */,
-				F832937C227E23430097011E /* OTPEncryptionTests.m */,
 			);
 			path = CryptographyDemoTests;
 			sourceTree = "<group>";
@@ -175,6 +221,8 @@
 				CE9D6FDA226AC34B002E60AB /* OTPCrypto.m */,
 				F832937E227E42440097011E /* Timer.h */,
 				F832937F227E42440097011E /* Timer.m */,
+				A9F0BDB723D5220F00BA8FD5 /* TestVectorConstants.h */,
+				A9F0BDB823D5220F00BA8FD5 /* TestVectorConstants.m */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -280,6 +328,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A9F0BDB923D5220F00BA8FD5 /* TestVectorConstants.m in Sources */,
 				CE5F262620ABB89100518422 /* Crypto.m in Sources */,
 				CE5F262C20ABB99C00518422 /* Mnemonic.m in Sources */,
 				CE9D6FDB226AC34B002E60AB /* OTPCrypto.m in Sources */,
@@ -298,6 +347,7 @@
 			files = (
 				CE5F261820AB997F00518422 /* CryptographyDemoTests.m in Sources */,
 				CEC3F64021783EBB007986AD /* HashKeyDerivationTests.m in Sources */,
+				A9F0BDB623D521E100BA8FD5 /* AES_MerkleTree_Tests.m in Sources */,
 				CE9B64592256DEF7004042F5 /* LamportSignatureTests.m in Sources */,
 				CEC3F63E21783EBB007986AD /* AES_CTR_Tests.m in Sources */,
 				CEC3F6452178467E007986AD /* MnemonicTests.m in Sources */,

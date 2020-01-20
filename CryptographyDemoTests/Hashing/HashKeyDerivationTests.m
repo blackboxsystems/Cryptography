@@ -1,31 +1,26 @@
 #import <XCTest/XCTest.h>
 #import "Crypto.h"
 #import "Mnemonic.h"
-
-// key derivation rounds
-static const NSInteger kKDFRoundsTEST = 1024;
-
+#import "TestVectorConstants.h"
 
 @interface HashKeyDerivationTests : XCTestCase
 
 @end
 
-
-
 @implementation HashKeyDerivationTests
 
-- (void)setUp {
+- (void)setUp
+{
     [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
 }
 
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+- (void)tearDown
+{
     [super tearDown];
 }
 
-- (void)test_HASH_SHA {
-    
+- (void)test_HASH_SHA
+{
     // message to hash
     NSData *msg = [@"test" dataUsingEncoding:NSUTF8StringEncoding];
     NSData *hash = [Crypto sha:msg nbits:224];
@@ -41,7 +36,8 @@ static const NSInteger kKDFRoundsTEST = 1024;
     XCTAssertEqualObjects([DataFormatter hexDataToString:hash], @"ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1d5f84f88bc887fd67b143732c304cc5fa9ad8e6f57f50028a8ff");
 }
 
-- (void)test_HMAC_RFC4231 {
+- (void)test_HMAC_RFC4231
+{
     // RFC4231 TESTS: https://tools.ietf.org/html/rfc4231
     
     // keys
@@ -168,8 +164,8 @@ static const NSInteger kKDFRoundsTEST = 1024;
     XCTAssertEqualObjects(hmac, @"80b24263c7c1a3ebb71493c1dd7be8b49b46d1f41b4aeec1121b013783f8f3526b56d037e05f2598bd0fd2215d6a1e5295e64f73f63f0aec8b915a985d786598");
 }
 
-- (void)test_PBKDF2 {
-    
+- (void)test_PBKDF2
+{    
     NSString *password = @"test";
     // password and salts to use
     NSData *kSalt224 = [DataFormatter hexStringToData:@"77f706c5efecf3bd98aa2647c60820c088dce942bcb77905d436bf4c"];
@@ -204,6 +200,23 @@ static const NSInteger kKDFRoundsTEST = 1024;
                      rounds:kKDFRoundsTEST];
     XCTAssertEqualObjects([DataFormatter hexDataToString:key],
                           @"866749ea6c2c28e0e4bfebedf9a48b3d619a08536917c33a518e82767b951e06d8fa7558190c04f32e5b3cf1eff9b21ba5604e1e397888603c49790da8d22489");
+}
+
+
+- (void)test_proofOfWork
+{
+    // init challenge
+    NSData *challenge = [DataFormatter hexStringToData:@"ab436ff422f54c852829a63ab325791c001de60ae4ea934ad8a603cc5eab3129"];
+    // number of leading 0's to find
+    NSInteger difficulty = 4;
+    
+    NSDictionary *dict = [Crypto proofOfWork:challenge difficulty:difficulty];
+    NSString *proof = [DataFormatter hexDataToString:[dict objectForKey:@"proof"]];
+    NSInteger nonce = [[dict objectForKey:@"nonce"] integerValue];
+    
+    // verify proof parameters
+    XCTAssertEqual(nonce, 35559);
+    XCTAssertEqualObjects(proof, @"000024b20de5f9375254af627f76c47fa93973f3442bfbe42e9fc8fd9cc969c6");
 }
 
 

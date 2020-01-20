@@ -282,6 +282,7 @@
 
     return encryptedData;
 }
+
 + (NSData *)decrypt:(NSData *)data
                 key:(NSData *)key
                  iv:(NSData *)iv {
@@ -301,6 +302,7 @@
     
     return decryptedData;
 }
+
 + (NSData *)encryptAES_CTR:(NSData *)data
                        key:(NSData *)key
                         iv:(NSData *)iv{
@@ -319,6 +321,7 @@
     
     return encryptedData;
 }
+
 + (NSData *)decryptAES_CTR:(NSData *)data
                        key:(NSData *)key
                         iv:(NSData *)iv{
@@ -335,15 +338,87 @@
     
     return decryptedData;
 }
-/**  ------------------------------------------------------------
- //  Encryption with HMAC (Authenticated)
- //  ------------------------------------------------------------
- */
- // Kek (key encryption key)
- // Kak (key authentication key)
+
+#pragma mark - ENCRYPT AES CBC
++ (NSData *)encryptAES_CBC:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv{
+    
+    if (key == nil || data == nil || iv == nil) {
+        return nil;
+    }
+    CCOptions pad = ccNoPadding;
+    NSData *encryptedData = [self doCipher:data
+                                       key:key
+                                   context:kCCEncrypt
+                                      mode:kCCModeCBC
+                                 algorithm:kCCAlgorithmAES
+                                   padding:&pad
+                                        iv:iv];
+    
+    return encryptedData;
+}
+
+#pragma mark - DECRYPT AES CBC
++ (NSData *)decryptAES_CBC:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv{
+    
+    // decrypt data
+    CCOptions pad = ccNoPadding;
+    NSData *decryptedData = [Crypto doCipher:data
+                                         key:key
+                                     context:kCCDecrypt
+                                        mode:kCCModeCBC
+                                   algorithm:kCCAlgorithmAES
+                                     padding:&pad
+                                          iv:iv];
+    return decryptedData;
+}
+
+#pragma mark - ENCRYPT AES CFB
++ (NSData *)encryptAES_CFB:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv{
+    
+    if (key == nil || data == nil || iv == nil) {
+        return nil;
+    }
+    CCOptions pad = ccNoPadding;
+    NSData *encryptedData = [self doCipher:data
+                                       key:key
+                                   context:kCCEncrypt
+                                      mode:kCCModeCFB
+                                 algorithm:kCCAlgorithmAES
+                                   padding:&pad
+                                        iv:iv];
+    
+    return encryptedData;
+}
+
+#pragma mark - DECRYPT AES CFB
++ (NSData *)decryptAES_CFB:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv{
+    
+    // decrypt data
+    CCOptions pad = ccNoPadding;
+    NSData *decryptedData = [Crypto doCipher:data
+                                         key:key
+                                     context:kCCDecrypt
+                                        mode:kCCModeCFB
+                                   algorithm:kCCAlgorithmAES
+                                     padding:&pad
+                                          iv:iv];
+    return decryptedData;
+}
+
+
+#pragma mark - Encrypt-Then-MAC
 + (NSData *)encryptThenMAC:(NSData *)data
+                    encKey:(NSData *)Kek
                     intKey:(NSData *)Kak
-                    encKey:(NSData *)Kek{
+{
     
     if ((Kek == nil) || (Kak == nil)) {
         return nil;
@@ -377,8 +452,9 @@
 }
 #pragma mark - CHECK-MAC-THEN-DECRYPT
 + (NSData * _Nullable)decryptWithMAC:(NSData *)data
+                              encKey:(NSData *)Kx
                               intKey:(NSData *)Ky
-                              encKey:(NSData *)Kx{
+{
     
     // lengths of bytes to parse out
     NSInteger key_length = Kx.length;
@@ -422,6 +498,90 @@
     return decryptedData;
 }
 
+
+#pragma mark - Encrypt-Then-Merkle
++ (NSData *)encryptThenMerkle:(NSData *)data
+                       encKey:(NSData *)Kx
+                       intKey:(NSData *)Ky
+{
+    if ((Kx == nil) || (Ky == nil)) {
+        return nil;
+    }
+    
+    // randomize iv
+    NSData *iv = [Crypto getIV:kAES256_IV_LENGTH_BYTES];
+    
+    // encrypt
+    NSData *encryptedData = [Crypto encryptAES_CTR:data key:Kx iv:iv];
+    
+    if (encryptedData == nil) {
+        return nil;
+    }
+    
+    // integrity key
+    NSMutableData *Kmac = [[NSMutableData alloc] initWithData:Ky];
+    [Kmac appendData:iv];
+    
+    // generate HMAC
+    NSData *digest = [Crypto hmac:[Crypto sha256:encryptedData]
+                              key:[Crypto sha256:Kmac]
+                            nbits:(Kx.length * 8)];
+    
+    // append pub data and hmac to blob
+    NSMutableData *macstream = [[NSMutableData alloc] initWithData:iv];
+    [macstream appendData:digest];
+    [macstream appendData:encryptedData];
+    
+    return macstream;
+}
+
+#pragma mark - Check-Merkle-Then-Decrypt
++ (NSData * _Nullable)decryptWithMerkle:(NSData *)data
+                              encKey:(NSData *)Kx
+                              intKey:(NSData *)Ky
+{
+    
+    // lengths of bytes to parse out
+    NSInteger key_length = Kx.length;
+    NSInteger param_length = kAES256_IV_LENGTH_BYTES + key_length;
+    
+    if (data.length <= param_length) {
+        return nil;
+    }
+    
+    // parse iv, hmac, and encrypted blob
+    NSData *iv = [data subdataWithRange:NSMakeRange(0, kAES256_IV_LENGTH_BYTES)];
+    NSData *hmac = [data subdataWithRange:NSMakeRange(kAES256_IV_LENGTH_BYTES, key_length)];
+    NSData *blob = [data subdataWithRange:NSMakeRange(param_length, data.length - param_length)];
+    
+    // form integrity key
+    NSMutableData *macKey = [[NSMutableData alloc] initWithData:Ky];
+    [macKey appendData:iv];
+    
+    // generate HMAC
+    NSData *digest = [Crypto hmac:[Crypto sha256:blob]
+                              key:[Crypto sha256:macKey]
+                            nbits:(key_length * 8)];
+    
+    // check the MAC, if integrity fails we don't trust the underlying plaintext.
+    // For example, someone could intentionally corrupt data in specific regions
+    // of ciphertext to cause arbitrary side effects in the app upon decryption.
+    if (![digest isEqualToData:hmac]) {
+        return nil;
+    }
+    
+    // decrypt data
+    CCOptions pad = 0;
+    NSData *decryptedData = [Crypto doCipher:blob
+                                         key:Kx
+                                     context:kCCDecrypt
+                                        mode:kCCModeCTR
+                                   algorithm:kCCAlgorithmAES
+                                     padding:&pad
+                                          iv:iv];
+    
+    return decryptedData;
+}
 
 + (NSData *)getIV:(NSInteger)nbytes{
     return [[Crypto sha256:[self generateRandomCrytoBytes:nbytes]] subdataWithRange:NSMakeRange(0, nbytes)];
@@ -641,10 +801,7 @@
     return nil;
 }
 
-/**  ------------------------------------------------------------
- //  XOR Operation
- //  ------------------------------------------------------------
- */
+#pragma mark - XOR DATA SHORT (DEFAULT)
 + (NSData *)xorData:(NSData *)data1
            withData:(NSData *)data2{
     
@@ -665,6 +822,39 @@
     
     return xorData;
 }
+
+#pragma mark - XOR DATA LONG
++ (NSData *)xorDataLong:(NSData *)data1
+               withData:(NSData *)data2
+{
+    if ((data1 == nil) || (data2 == nil)) {
+        return (data1 == nil ? data2 : data1);
+    }
+    
+    NSMutableData *xorData = [[NSMutableData alloc] init];
+    NSData *largerData;
+    const char *data1Bytes = [data1 bytes];
+    const char *data2Bytes = [data2 bytes];
+    
+    int L1 = (int)data1.length;
+    int L2 = (int)data2.length;
+    
+    BOOL firstIsBigger = (L1 > L2);
+    largerData = (firstIsBigger ? data1 : data2);
+    
+    int minL = (firstIsBigger ? L2 : L1);
+    int maxL = (!firstIsBigger ? L2 : L1);
+    
+    [xorData appendData:[largerData subdataWithRange:NSMakeRange(0, maxL-minL)]];
+    for (int i = 0; i < minL; i++)
+    {
+        const char xorByte = data1Bytes[i] ^ data2Bytes[i];
+        [xorData appendBytes:&xorByte length:1];
+    }
+    
+    return xorData;
+}
+
 
 /**  ------------------------------------------------------------
  //  Lamport Signature Scheme

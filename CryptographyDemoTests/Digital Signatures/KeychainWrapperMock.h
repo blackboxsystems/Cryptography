@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 
-#define kKEYCHAIN_TAG_ECC_TEST "com.cryptographydemotests.ecc.test"
+#define kKEYCHAIN_TAG_ECC_TEST "com.cryptographydemotests.test.ecc"
 #define kECC_KEY_LENGTH_256 256
 
 @interface KeychainWrapperMock : NSObject

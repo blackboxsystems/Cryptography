@@ -28,7 +28,9 @@
 
 // SHA hash
 + (NSData *)sha256:(NSData *)data;
+
 + (NSData *)sha512:(NSData *)data;
+
 + (NSData *)sha:(NSData *)data
           nbits:(NSInteger)nbits;
 
@@ -56,28 +58,60 @@
 + (NSData *)encrypt:(NSData *)data
                 key:(NSData *)key
                  iv:(NSData *)iv;
+
 + (NSData *)decrypt:(NSData *)data
                 key:(NSData *)key
                  iv:(NSData *)iv;
 
+#pragma mark - AES CTR
 + (NSData *)encryptAES_CTR:(NSData *)data
                        key:(NSData *)key
                         iv:(NSData *)iv;
+
 + (NSData *)decryptAES_CTR:(NSData *)data
                        key:(NSData *)key
                         iv:(NSData *)iv;
 
-// encrypt-then-mac
+#pragma mark - AES CBC
++ (NSData *)encryptAES_CBC:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv;
+
++ (NSData *)decryptAES_CBC:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv;
+
+#pragma mark - AES CFB
++ (NSData *)encryptAES_CFB:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv;
+
++ (NSData *)decryptAES_CFB:(NSData *)data
+                       key:(NSData *)key
+                        iv:(NSData *)iv;
+
+#pragma mark - Encrypt-Then-Mac
 + (NSData *)encryptThenMAC:(NSData *)data
-                    intKey:(NSData *)Kak
-                    encKey:(NSData *)Kek;
+                    encKey:(NSData *)Kek
+                    intKey:(NSData *)Kak;
 
-// check mac then decrypt
+#pragma mark - Check-Mac-Then-Decrypt
 + (NSData *)decryptWithMAC:(NSData *)data
-                    intKey:(NSData *)Ky
-                    encKey:(NSData *)Kx;
+                    encKey:(NSData *)Kx
+                    intKey:(NSData *)Ky;
 
-#pragma mark - SYMMETRIC ENCRYPTION
+#pragma mark - Encrypt-Then-Merkle
++ (NSData *)encryptThenMerkle:(NSData *)data
+                       encKey:(NSData *)Kek
+                       intKey:(NSData *)Kak;
+
+#pragma mark - Check-Merkle-Then-Decrypt
++ (NSData *)decryptWithMerkle:(NSData *)data
+                       encKey:(NSData *)Kx
+                       intKey:(NSData *)Ky;
+
+
+#pragma mark - SYMMETRIC ENCRYPTION MODES
 + (NSData *)doCipher:(NSData *)plainText
                  key:(NSData *)key
              context:(CCOperation)encryptOrDecrypt
@@ -86,14 +120,19 @@
              padding:(CCOptions *)padding
                   iv:(NSData *)iv;
 
-// xor operation
+#pragma mark - XOR DATA SHORT
 + (NSData *)xorData:(NSData *)data1
            withData:(NSData *)data2;
 
-// lamport signature generation
+#pragma mark - XOR DATA LONG
++ (NSData *)xorDataLong:(NSData *)data1
+               withData:(NSData *)data2;
+
+#pragma mark - LAMPORT SIGNATURE
 + (NSData *)generateLamportSignature:(NSData *)digest;
 
-// proof of work algorithm
+#pragma mark - PROOF OF WORK
 + (NSDictionary *)proofOfWork:(NSData *)challenge difficulty:(NSInteger)diff;
+
 
 @end

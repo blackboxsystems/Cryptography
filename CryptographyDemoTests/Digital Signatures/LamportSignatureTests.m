@@ -9,23 +9,18 @@
 
 @implementation LamportSignatureTests
 
-- (void)setUp {
-    // Put setup code here. This method is called before the invocation of each test method in the class.
+- (void)setUp
+{
+    [super setUp];
 }
 
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+- (void)tearDown
+{
+    [super tearDown];
 }
 
-//- (void)testPerformanceExample {
-//    [self measureBlock:^{
-//
-//    }];
-//}
-
-
-- (void)test_LamportSignature {
-    
+- (void)test_LamportSignature
+{    
     // message digest
     NSString *message = @"hello world";
     // key/hash length in bytes

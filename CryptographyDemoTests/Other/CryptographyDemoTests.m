@@ -1,15 +1,7 @@
 #import <XCTest/XCTest.h>
 #import "Crypto.h"
 #import "Mnemonic.h"
-#import "KeychainWrapperMock.h"
-#import "Protocol.h"
-
-#define password                @"testing123"
-#define mnemonic12              @"color install recipe clown empty bind safe what dream fat move grow"
-
-#define IV_128      @"04a82b55518f6425030cbd17804643bd"
-#define SALT_512    @"a6ba11fee4eacb43aeffae5c254b2950259796fadfd870422812395903c5052fa37584f37ed9a7db52ffff3e57b9de262e0455b92348b2e12b4b4c2aaea80182"
-#define kKDFRoundsTEST  4096
+#import "TestVectorConstants.h"
 
 @interface CryptographyDemoTests : XCTestCase
 
@@ -18,22 +10,23 @@
 @implementation CryptographyDemoTests
 
 
-- (void)setUp {
+- (void)setUp
+{
     [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
 }
 
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+- (void)tearDown
+{
     [super tearDown];
 }
 
 
-- (void)test_encryptDecrypt_Blob {
-    
-    NSData *msg = [Mnemonic entropyFromMemnonic:mnemonic12];
-    NSData *salt = [DataFormatter hexStringToData:SALT_512];
+- (void)test_encryptDecrypt_Blob
+{    
+    NSData *msg = [Mnemonic entropyFromMemnonic:kDEFAULT_MNEMONIC_12];
+    NSData *salt = [DataFormatter hexStringToData:kDEFAULT_SALT_512];
     NSInteger kdf_rounds = kKDFRoundsTEST;
+    NSString *password = kDEFAULT_PASSWORD;
     
     // derive
     NSData *key = [Crypto deriveKey:password
@@ -47,8 +40,8 @@
     
     // encrypt-then-mac
     NSData *encryptedBlob = [Crypto encryptThenMAC:msg
-                                            intKey:Ky
-                                            encKey:Kx];
+                                            encKey:Kx
+                                            intKey:Ky];
     
     // construct protocol data (public params and encrypted blob)
     NSData *protocol = [Protocol createProtocolWithBlob:encryptedBlob
@@ -84,14 +77,12 @@
     Kx = [key2 subdataWithRange:NSMakeRange(0, kAES256_KEY_LENGTH_BYTES)];
     Ky = [key2 subdataWithRange:NSMakeRange(kAES256_KEY_LENGTH_BYTES, kAES256_KEY_LENGTH_BYTES)];
     
-    NSData *decryptedData = [Crypto decryptWithMAC:parsed_blob
-                                            intKey:Ky
-                                            encKey:Kx];
+    NSData *decryptedData = [Crypto decryptWithMAC:parsed_blob encKey:Kx intKey:Ky];
     XCTAssertEqualObjects(decryptedData, msg);
 }
 
-- (void)test_proofOfWork {
-    
+- (void)test_proofOfWork
+{
     // init challenge
     NSData *challenge = [DataFormatter hexStringToData:@"ab436ff422f54c852829a63ab325791c001de60ae4ea934ad8a603cc5eab3129"];
     // number of leading 0's to find

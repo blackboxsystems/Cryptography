@@ -1,15 +1,7 @@
 #import <XCTest/XCTest.h>
-#import "Protocol.h"
 #import "OTPCrypto.h"
-#import "Crypto.h"
 #import "Mnemonic.h"
-
-#define kDEFAULT_PASSWORD @"testing123"
-
-#define mnemonic12      @"color install recipe clown empty bind safe what dream fat move grow"
-#define mnemonic24      @"hamster diagram private dutch cause delay private meat slide toddler razor book happy fancy gospel tennis maple dilemma loan word shrug inflict delay length"
-
-#define kSalt512    @"89badee99f43b9eb8d2005589de41fa612cdae96255c1a7e5583d78d56a21bf8a7a2b26cd1b70b227f7101cfcabecf98757905888d05323698b0be37322e865a"
+#import "TestVectorConstants.h"
 
 @interface OTPEncryptionTests : XCTestCase
 
@@ -17,21 +9,21 @@
 
 @implementation OTPEncryptionTests
 
-- (void)setUp {
+- (void)setUp
+{
     [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
 }
 
-- (void)tearDown {
+- (void)tearDown
+{
     [super tearDown];
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
 }
 
 #pragma mark - DETERMINISTIC ONE TIME PAD PROOF - DIFFICULTY BASED
-- (void)test_ONE_TIME_PAD_PROTOCOL_DIFFICULTY_LOW {
-    
-    NSData *plaintext = [Mnemonic entropyFromMemnonic:mnemonic24];
-    NSData *salt = [DataFormatter hexStringToData:kSalt512];
+- (void)test_ONE_TIME_PAD_PROTOCOL_DIFFICULTY_LOW
+{
+    NSData *plaintext = [Mnemonic entropyFromMemnonic:kDEFAULT_MNEMONIC_24];
+    NSData *salt = [DataFormatter hexStringToData:kDEFAULT_SALT_512];
     
     // encypted pad data
     NSData *pad = [OTPCrypto deriveOTP:kDEFAULT_PASSWORD
@@ -62,12 +54,12 @@
 
 
 #pragma mark - DETERMINISTIC ONE TIME PAD PROOF - TIME BASED
-- (void)test_ONE_TIME_PAD_PROTOCOL_TIMED {
-    
+- (void)test_ONE_TIME_PAD_PROTOCOL_TIMED
+{
     // target time in seconds for pad generation
-    double targetSeconds = 10.0;
-    NSData *plaintext = [Mnemonic entropyFromMemnonic:mnemonic24];
-    NSData *salt = [DataFormatter hexStringToData:kSalt512];
+    double targetSeconds = 2.0;
+    NSData *plaintext = [Mnemonic entropyFromMemnonic:kDEFAULT_MNEMONIC_24];
+    NSData *salt = [DataFormatter hexStringToData:kDEFAULT_SALT_512];
     
     // encypted pad data
     NSData *blob = [OTPCrypto deriveTimedOTP:kDEFAULT_PASSWORD
@@ -81,6 +73,7 @@
     // parse parameters to check decryption
     NSDictionary *parsedOTPBlob = [Protocol parseBlob:blob];
 //    NSLog(@"\nparsed Timed OTP Blob: %@",parsedOTPBlob);
+    
     NSData *parsed_salt = [DataFormatter hexStringToData:[parsedOTPBlob objectForKey:PROTOCOL_SALT_KEY]];
     NSInteger parsed_rounds = [[parsedOTPBlob objectForKey:PROTOCOL_ROUNDS_KEY] integerValue];
     NSInteger parsed_round_blocks = [[parsedOTPBlob objectForKey:PROTOCOL_BLOCK_ROUNDS_KEY] integerValue];
